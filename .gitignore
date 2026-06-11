@@ -1,0 +1,22 @@
+# Jupyter
+.ipynb_checkpoints/
+__pycache__/
+*.pyc
+
+# Outputs (generated, not source)
+output/
+
+# Jupytext paired notebooks keep .ipynb for local use,
+# but Git tracks the .py sources
+*.ipynb
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env
+.env
+*.egg-info/
+
+# Raw data (too large / sensitive)
+raw/
