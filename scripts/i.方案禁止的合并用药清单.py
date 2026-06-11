@@ -1,5 +1,5 @@
 # %%
-# %run env.py
+# %run ../env.py
 
 # %%
 RAND = pd.read_excel(raw_path, sheet_name = "DS_RAND", header = 0, skiprows = [1], usecols = ["受试者", "随机号"], dtype = str)

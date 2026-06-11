@@ -1,9 +1,5 @@
-# Jupytext: pair .ipynb with .py (percent format)
-formats = ["ipynb", "py:percent"]
-
-# Preserve notebook-level metadata
-notebook_metadata_filter = "-all"
-
-# Optionally strip outputs on write
-# [formats.ipynb]
-# suffix = ".ipynb"
+# Jupytext global config
+# Cross-directory pairing is configured per-notebook in metadata:
+#   notebooks//ipynb  <->  ../scripts//py:percent
+#
+# Sync command: jupytext --sync notebooks/*.ipynb

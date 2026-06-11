@@ -1,5 +1,5 @@
 # %%
-# %run env.py
+# %run ../env.py
 
 subj = "受试者"
 

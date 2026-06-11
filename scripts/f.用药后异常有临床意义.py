@@ -1,5 +1,5 @@
 # %%
-# %run env.py
+# %run ../env.py
 
 # %% editable=true slideshow={"slide_type": ""}
 index = ["受试者", "受试者状态", "访视名称", "页面名称"]

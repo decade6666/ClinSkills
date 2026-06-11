@@ -1,5 +1,5 @@
 # %%
-# %run env.py
+# %run ../env.py
 
 # %% [markdown]
 # # 用药依从性计算

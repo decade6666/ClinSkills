@@ -1,5 +1,5 @@
 # %%
-# %run env.py
+# %run ../env.py
 
 # %%
 index = ["受试者", "记录号"]

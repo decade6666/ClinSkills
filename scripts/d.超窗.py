@@ -1,5 +1,5 @@
 # %%
-# %run env.py
+# %run ../env.py
 
 # %%
 TW = pd.read_excel(timewin_path, sheet_name = "时间窗", usecols = ["类别", "访视名称", "时间窗下限", "时间窗上限"])

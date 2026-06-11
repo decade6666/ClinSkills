@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "deny": [
+      "Edit(**/*.ipynb)",
+      "Write(**/*.ipynb)",
+      "NotebookEdit(**/*.ipynb)"
+    ],
+    "allow": [
+      "Read(**)",
+      "Glob(**)",
+      "Grep(**)",
+      "Edit(scripts/**)",
+      "Edit(utils/**)",
+      "Edit(env.py)",
+      "Edit(config.yaml)",
+      "Edit(注意事项.md)",
+      "Edit(.gitignore)",
+      "Edit(.jupytext.toml)",
+      "Edit(CLAUDE.md)",
+      "Write(scripts/**)",
+      "Write(utils/**)",
+      "Bash(jupytext --sync *)",
+      "Bash(python scripts/*.py)",
+      "Bash(python -c *)",
+      "Bash(pip install *)",
+      "Bash(git *)"
+    ]
+  }
+}

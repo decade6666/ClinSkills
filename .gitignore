@@ -1,22 +1,17 @@
-# Jupyter
+# Jupyter notebooks (generated from scripts/ via jupytext)
+notebooks/*.ipynb
 .ipynb_checkpoints/
+
+# Python cache
 __pycache__/
 *.pyc
 
-# Outputs (generated, not source)
+# Generated output
 output/
 
-# Jupytext paired notebooks keep .ipynb for local use,
-# but Git tracks the .py sources
-*.ipynb
+# Raw data (large / sensitive)
+raw/
 
 # OS
 .DS_Store
 Thumbs.db
-
-# Env
-.env
-*.egg-info/
-
-# Raw data (too large / sensitive)
-raw/
