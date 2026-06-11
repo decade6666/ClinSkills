@@ -1,4 +1,19 @@
 {
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/sync-notebook.sh",
+            "if": "Edit(scripts/**)|Write(scripts/**)",
+            "statusMessage": "Syncing notebook..."
+          }
+        ]
+      }
+    ]
+  },
   "permissions": {
     "deny": [
       "Edit(**/*.ipynb)",
