@@ -1,5 +1,6 @@
 # %%
-# %run ../env.py
+# %run ../../env.py
+from utils.loaders import load_rand
 
 # %% [markdown]
 # # 用药依从性计算
@@ -40,7 +41,7 @@ prx = "\d"
 EC["实际日服药剂量"] = EC["日服药剂量"].str.extract(r"(\d+)").astype("Int32")
 EC = EC[EC["实际日服药剂量"].notna()].drop(columns = cols + ["日服药剂量"])
 EC = EC.groupby(index).agg(
-    实际总服药量 = ("实际日服药剂量", "sum") 
+    实际总服药量 = ("实际日服药剂量", "sum")
 ).reset_index()
 
 # %%
@@ -57,8 +58,7 @@ EC1 = (
 
 # %%
 # 随机日期
-cols = ["受试者", "随机日期", "随机号"]
-RAND = pd.read_excel(raw_path, sheet_name = "DS_RAND", header = 0, skiprows = [1], usecols = cols)
+RAND = load_rand(cols=['受试者', '随机日期', '随机号'])
 
 # 是否完成治疗
 cols = ["受试者", "页面名称", "是否提前终止治疗_TXT", "提前终止治疗原因_TXT"]
@@ -128,14 +128,14 @@ df = df.rename(columns = {
 stand_cols = [
     "筛选号",
     "随机号",
-    "首次用药日期", 
+    "首次用药日期",
     "末次用药日期",
     "实际用药量（粒）",
     "应用药量（粒）",
     "用药依从性（%）",
     "是否提前终止治疗",
-    "提前终止治疗原因", 
-    "是否完成试验", 
+    "提前终止治疗原因",
+    "是否完成试验",
      ]
 df = df[stand_cols]
 
@@ -148,74 +148,8 @@ lc = len(df)
 ls = len(df.drop_duplicates(subset = "筛选号"))
 
 export_to_excel_with_format(
-    df, 
-    f"{output_path}/listing/表26 用药依从性违背清单.xlsx", 
-    "表26 用药依从性违背清单", 
+    df,
+    f"{output_path}/listing/表26 用药依从性违背清单.xlsx",
+    "表26 用药依从性违背清单",
     f"表26 用药依从性违背清单（{lc}例次{ls}例）"
 )
-
-# %% [markdown]
-# ## 用药依从性汇总
-
-# %%
-# 受试者状态
-cols = ["受试者", "受试者状态"]
-RAND = pd.read_excel(raw_path, sheet_name = "DS_RAND", header = 0, skiprows = [1], usecols = cols)
-
-df_summary = df.merge(RAND, left_on = "筛选号", right_on = "受试者", how = "left")
-df_summary = df_summary[cols + ["用药依从性（%）"]]
-
-df_summary["用药依从性（%）"] = df_summary["用药依从性（%）"].str.replace('%', '').astype(float)
-# 计算用药依从性区间
-def categorize_adherence(x):
-    if pd.isna(x):
-        return '未知'
-    elif x < 80:
-        return '依从性<80%'
-    elif 80 <= x <= 120:
-        return '依从性80%-120%'
-    else:
-        return '依从性>120%'
-
-# 应用该分类规则
-df_summary['依从性区间'] = df_summary['用药依从性（%）'].apply(categorize_adherence)
-all_adherence_categories = ['依从性<80%', '依从性80%-120%', '依从性>120%', "依从性未知"]
-all_statuses = df_summary['受试者状态'].unique()
-
-# 按受试者状态和依从性区间分组，计算每组的数量
-df_summary = df_summary.groupby(['受试者状态', '依从性区间']).size().unstack(fill_value=0)
-df_summary = df_summary.reindex(columns=all_adherence_categories, fill_value=0).reset_index()
-df_summary["受试者状态"] = df_summary["受试者状态"].replace("中止退出", "提前退出")
-df_summary = df_summary.sort_values(by="受试者状态", ascending=True)
-
-df_summary.insert(0, "No.", range(1, len(df_summary) + 1))
-export_to_excel_with_format(
-    df_summary, 
-    f"{output_path}/listing/表25 用药依从性汇总清单.xlsx", 
-    "表25 用药依从性汇总清单", 
-    f"表25 用药依从性汇总清单"
-)
-
-# %% [markdown]
-# # 受试者实际用药天数
-
-# %%
-index = ["受试者"]
-cols = ["服药日期", "本日是否服药_TXT"]
-EC = pd.read_excel(raw_path, sheet_name = "EC", header = 0, skiprows = [1], usecols = index + cols)
-EC = EC[EC["本日是否服药_TXT"] == "是"]
-
-# %%
-dose_days = EC.groupby(index).agg(
-    用药天数=("本日是否服药_TXT", "count")
-).reset_index()
-dose_days
-
-export_to_excel_with_format(
-    dose_days, 
-    f"{output_path}/listing/受试者实际用药天数清单.xlsx", 
-    "受试者实际用药天数清单", 
-    f"受试者实际用药天数清单"
-)
-
-# %%

@@ -1,5 +1,5 @@
 # %%
-# %run ../env.py
+# %run ../../env.py
 
 # %%
 index = ["受试者", "记录号"]
@@ -16,7 +16,7 @@ def Checkbox_Summary(df: pd.DataFrame, cols: list, key: str, mark: str, cat: str
         target_data = df[df[col] == mark]
         ls = target_data[key].nunique()
         lc = len(target_data)
-        
+
         results.append({
             "项目": cat,
             "类别": col,
@@ -48,24 +48,24 @@ def Radio_Summary(df: pd.DataFrame, col: str, key: str, cat: str):
         例数=(key, "nunique"),
         例次=(key, "size")
     ).reset_index()
-    
+
     res.rename(columns={col: "类别"}, inplace=True)
     res.insert(0, "项目", cat)
-    
+
     return res
-    
+
 cols = [
     "试验期间是否有不良事件",
-    "初始严重程度", 
-    "严重程度是否有变化", 
-    "严重程度-1", 
-    "严重程度-2", 
-    "严重程度-3", 
-    "对试验药物采取的措施", 
-    "与试验药物的关系", 
-    "是否符合严重不良事件定义", 
-    "试验结束时，转归", 
-    "是否因此不良事件退出试验", 
+    "初始严重程度",
+    "严重程度是否有变化",
+    "严重程度-1",
+    "严重程度-2",
+    "严重程度-3",
+    "对试验药物采取的措施",
+    "与试验药物的关系",
+    "是否符合严重不良事件定义",
+    "试验结束时，转归",
+    "是否因此不良事件退出试验",
     "是否为特别关注不良事件",
 ]
 cols = [col + "_TXT" for col in cols]
@@ -77,22 +77,22 @@ for col in cols:
     col_txt = col.replace("_TXT", "")
     res = Radio_Summary(AE, col, "受试者", col_txt)
     res3.append(res)
-    
+
 res3 = pd.concat(res3, ignore_index=True)
 
 # %%
 cols = [
     "试验期间是否有不良事件",
-    "初始严重程度", 
-    "严重程度是否有变化", 
-    "严重程度-1", 
-    "严重程度-2", 
-    "严重程度-3", 
-    "对试验药物采取的措施", 
-    "与试验药物的关系", 
-    "是否符合严重不良事件定义", 
-    "试验结束时，转归", 
-    "是否因此不良事件退出试验", 
+    "初始严重程度",
+    "严重程度是否有变化",
+    "严重程度-1",
+    "严重程度-2",
+    "严重程度-3",
+    "对试验药物采取的措施",
+    "与试验药物的关系",
+    "是否符合严重不良事件定义",
+    "试验结束时，转归",
+    "是否因此不良事件退出试验",
     "是否为特别关注不良事件",
 ]
 
@@ -144,104 +144,12 @@ notes = [
     "不良事件详细清单见附件“不良事件清单”。"
 ]
 save_table_to_docx_threeline(
-        res, 
-        f'{output_path}/table/表28 不良事件总体分布情况.docx', 
-        f'表28 不良事件总体分布情况', 
+        res,
+        f'{output_path}/table/表28 不良事件总体分布情况.docx',
+        f'表28 不良事件总体分布情况',
         notes,
         row_height_cm=0.6,
         auto_width=True,
         include_notes=True,
         merge_columns=["项目"]
     )
-
-# %% [markdown]
-# ## 表格： 不良事件按照SOC、PT汇总情况
-
-# %%
-cols = ["Page", "SOCTerm", "PTTerm", "Subject"]
-code = pd.read_excel(code_path, sheet_name = "MedDRA", usecols = cols, dtype=str)
-code = code[code["Page"] == "不良事件"]
-code = code[cols].sort_values(by = cols).drop(columns = "Page")
-
-code = code.groupby(["SOCTerm", "PTTerm"]).agg(
-    例数=("Subject", "nunique"),
-    例次=("Subject", "size")
-)
-
-code = code.reset_index().rename(columns = {
-    "SOCTerm":"SOC",
-    "PTTerm":"PT"
-})
-
-notes = []
-
-save_table_to_docx_threeline(
-        code, 
-        f'{output_path}/table/表29 不良事件按照SOC、PT汇总情况.docx', 
-        '表29 不良事件按照SOC、PT汇总情况', 
-        notes,
-        row_height_cm=0.6,
-        auto_width=True,
-        include_notes=False,
-        merge_columns=["SOC"],
-        alignment = WD_TABLE_ALIGNMENT.CENTER
-    )
-
-# %% [markdown]
-# ## 表格： 医学编码情况
-
-# %%
-# MedDRA汇总
-cols = ["Page", "Subject"]
-code1 = pd.read_excel(code_path, sheet_name = "MedDRA", usecols = cols, dtype=str)
-n1 =len(code1)
-code1 = code1.groupby(["Page"]).agg(
-    编码数量=("Subject", "size"),
-    例数=("Subject", "nunique"),
-    例次=("Subject", "size"),
-)
-code1 = code1.reset_index()
-code1["编码字典"] = "MedDRA28.1"
-code1 = code1.rename(columns = {
-    "Page":"编码数据（表单名称）"
-})
-
-# %%
-# WHODrug汇总
-cols = ["Page", "Subject"]
-code2 = pd.read_excel(code_path, sheet_name = "WHODrug", usecols = cols, dtype=str)
-n2 = len(code2)
-code2 = code2.groupby(["Page"]).agg(
-    编码数量=("Subject", "size"),
-    例数=("Subject", "nunique"),
-    例次=("Subject", "size"),
-)
-code2 = code2.reset_index()
-code2["编码字典"] = "WHODrug Global Chinese B3/C3-format September 1, 2025"
-code2 = code2.rename(columns = {
-    "Page":"编码数据（表单名称）"
-})
-
-# %%
-code =pd.concat([code1, code2])
-code = code[["编码数据（表单名称）", "编码字典", "编码数量", "例次", "例数"]]
-
-order = ["既往史及现病史", "过敏史", "不良事件", "既往/合并用药", "既往/合并非药物治疗"]
-code['编码数据（表单名称）'] = pd.Categorical(code['编码数据（表单名称）'], categories=order, ordered=True)
-code = code.sort_values("编码数据（表单名称）").reset_index(drop=True)
-
-notes = [
-    f"本试验医学编码总条目数为{n1+n2}条"
-]
-save_table_to_docx_threeline(
-        code, 
-        f'{output_path}/table/表30 医学编码情况.docx', 
-        f'表30 医学编码情况', 
-        notes,
-        row_height_cm=0.6,
-        auto_width=False,
-        include_notes=True,
-        alignment = WD_TABLE_ALIGNMENT.CENTER
-    )
-
-# %%

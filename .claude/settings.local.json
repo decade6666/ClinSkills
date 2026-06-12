@@ -2,16 +2,20 @@
   "permissions": {
     "allow": [
       "Bash(pip install *)",
-      "Bash(jupytext --set-formats \"ipynb,py:percent\" *.ipynb)",
       "Bash(python -c ' *)",
       "Bash(git init *)",
       "Bash(git add *)",
-      "Bash(git commit -m 'init: jupytext paired project for clean code editing *)",
       "Bash(git commit *)",
       "Bash(Get-ChildItem -Name *.py, *.ipynb)",
       "Bash(Sort-Object)",
-      "Bash(jupytext --sync notebooks/b.入排标准.ipynb)",
-      "Bash(bash .claude/hooks/sync-notebook.sh)"
+      "Bash(python -m py_compile tables/**/*.py)",
+      "Bash(python tables/_replace_rand.py)",
+      "Bash(python tables/_patch_rand.py)",
+      "Bash(python tables/_replace_completion.py)",
+      "Bash(python tables/_replace_dose.py)",
+      "Bash(python *)",
+      "Bash(.\\\\.venv\\\\Scripts\\\\pip.exe install *)",
+      "PowerShell(.\\\\.venv\\\\Scripts\\\\pip.exe install -r requirements.txt)"
     ]
   }
 }

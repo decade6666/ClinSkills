@@ -1,5 +1,0 @@
-# Jupytext global config
-# Cross-directory pairing is configured per-notebook in metadata:
-#   notebooks//ipynb  <->  ../scripts//py:percent
-#
-# Sync command: jupytext --sync notebooks/*.ipynb
