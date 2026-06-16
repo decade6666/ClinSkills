@@ -30,7 +30,7 @@
 
 ## Permissions
 - `.ipynb` 文件：Claude Code 禁止编辑（只读，仅作参考）
-- `scripts/`、`utils/`、`env.py`、`config.yaml`：Claude Code 可编辑
+- `scripts/`、`utils/`、`config.py`、`config.yaml`：Claude Code 可编辑
 - `raw/`、`output/`：不在 Git 中
 
 ## Conventions
@@ -38,7 +38,7 @@
 - 路径引导代码：`sys.path.insert(0, project_root)` 后 import（见已有脚本模板）
 - 报表函数来自 `utils/output_format.py`
 - 数据读取函数来自 `utils/loaders.py`（`load_sheet` / `load_rand` 等）
-- 生成文件路径由 `config.yaml` 的 `output_path` 控制（env.py 自动解析为绝对路径）
+- 生成文件路径由 `config.yaml` 的 `output_path` 控制（`config.py` 自动解析为绝对路径）
 - 虚拟环境位于 `.venv/`，安装依赖：`pip install -r requirements.txt`
 
 ## 命名规范

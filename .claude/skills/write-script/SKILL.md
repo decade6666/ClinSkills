@@ -48,17 +48,17 @@ df = load_sheet("DS_END", IMPORT_END, header=0, skiprows=[1])
 python .claude/skills/write-script/scripts/query_metadata.py <command> [args]
 ```
 
-| 命令 | 用途 | 示例 |
-|------|------|------|
-| `summary` | 元数据概览 | `python .claude/skills/write-script/scripts/query_metadata.py summary` |
-| `forms` | 列出所有表单 | `python .claude/skills/write-script/scripts/query_metadata.py forms` |
-| `fields <表单名>` | 查看表单字段 | `python .claude/skills/write-script/scripts/query_metadata.py fields "不良事件（AE）记录表"` |
-| `search <关键字>` | 搜索字段 | `python .claude/skills/write-script/scripts/query_metadata.py search "知情同意"` |
-| `codelist <名称>` | 查看编码表 | `python .claude/skills/write-script/scripts/query_metadata.py codelist CL.YN1` |
-| `codelists` | 列出所有编码表 | `python .claude/skills/write-script/scripts/query_metadata.py codelists` |
-| `visits` | 访视与表单关系 | `python .claude/skills/write-script/scripts/query_metadata.py visits` |
-| `find-field <SAS名>` | 按 SAS 字段名查找 | `python .claude/skills/write-script/scripts/query_metadata.py find-field DSSTDAT4` |
-| `field-codelist <字段名>` | 根据字段名查编码表枚举值 | `python .claude/skills/write-script/scripts/query_metadata.py field-codelist "受试者是否随机入组"` |
+命令清单与用法以脚本为准——**不带参数运行可打印完整命令列表**。常用命令速览：
+
+| 命令 | 用途 |
+|------|------|
+| `summary` | 元数据概览（表单数 / 字段数 / 编码表数） |
+| `search <关键字>` | 跨表搜索字段（按需求关键字定位候选） |
+| `fields <表单名>` | 查看某表单全部字段（格式、编码表） |
+| `codelist <名称>` | 查看编码表枚举值 |
+| `find-field <SAS名>` | 按 SAS 字段名定位所在表单 |
+| `field-codelist <字段名>` | 按字段名直接查其编码表枚举值 |
+| `forms` / `codelists` / `visits` | 列出全部表单 / 编码表 / 访视 |
 
 **查询策略（渐进式披露）：**
 

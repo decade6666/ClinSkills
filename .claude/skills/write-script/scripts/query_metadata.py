@@ -23,7 +23,22 @@ import json
 import sys
 from pathlib import Path
 
-METADATA_DIR = Path(__file__).resolve().parent.parent.parent.parent.parent / "metadata"
+def _resolve_metadata_dir():
+    """定位 metadata 目录（含 FormField.json）。
+
+    优先项目根 `metadata/`；找不到则向下搜索最近的 `metadata/FormField.json`，
+    以兼容 study 子目录布局。
+    """
+    project_root = Path(__file__).resolve().parents[4]
+    default = project_root / "metadata"
+    if (default / "FormField.json").exists():
+        return default
+    for p in sorted(project_root.glob("**/metadata/FormField.json")):
+        return p.parent
+    return default
+
+
+METADATA_DIR = _resolve_metadata_dir()
 
 def _load(name):
     p = METADATA_DIR / f"{name}.json"

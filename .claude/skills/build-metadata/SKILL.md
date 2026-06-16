@@ -40,8 +40,10 @@ pip install --quiet openpyxl
 
 用 Glob 搜索 `**/metadata/*.xlsx`：
 - 找到多个 → AskUserQuestion 让用户选择
-- 找到零个 → 提示用户将元数据 Excel 放入 `<study>/metadata/` 目录
+- 找到零个 → 提示用户将元数据 Excel 放入项目根目录的 `metadata/` 目录
 - 找到一个 → 直接使用
+
+> **位置约定（与 write-script 技能的契约）**: JSON 输出落在 Excel 同目录，而 `query_metadata.py` 固定从**项目根目录的 `metadata/`** 读取。因此元数据 Excel 必须放在项目根 `metadata/` 下，两个技能才能衔接。
 
 ### Step 3: 运行解析脚本
 
@@ -93,7 +95,7 @@ cd .claude/skills/build-metadata/scripts && python build-metadata.py <edcType> <
 
 ## 输出
 
-JSON 文件生成在元数据 Excel 同目录。所有 EDC 解析器共用以下三个文件名：
+JSON 文件生成在元数据 Excel 同目录（应为项目根 `metadata/`，见 Step 2 位置约定）。所有 EDC 解析器共用以下三个文件名：
 
 | 输出文件 | 内容 | 说明 |
 |---------|------|------|

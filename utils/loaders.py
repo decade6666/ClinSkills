@@ -1,11 +1,13 @@
 """
-utils/loaders.py — 薄加载层（re-export）
+utils/loaders.py — 数据加载层
 
-基础 load_sheet 定义在 .claude/skills/write-script/scripts/loaders.py。
-领域专用 loader（load_rand、load_completion、load_first_dose）
-定义在 proj_utils/loaders.py。
+自包含定义所有数据读取函数：
+  - load_sheet      ：底层单 sheet 读取（统一 dtype=str）
+  - load_rand       ：DS_RAND 随机化信息
+  - load_completion ：DS_END 试验完成情况
+  - load_first_dose ：EC 首次服药日期
 
-本文件 re-export 全部，保持向后兼容：
+用法：
     from utils.loaders import load_sheet, load_rand, load_completion
 """
 
