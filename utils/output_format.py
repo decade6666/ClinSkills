@@ -659,3 +659,99 @@ def export_to_one_excel_with_format(df, output_path, sheet_name, title_name=None
         workbook.save(output_path)
 
     print(f"Sheet '{sheet_name}' 已成功导出至: {output_path}")
+
+
+def export_to_excel_twoheader(df, output_path, sheet_name, title,
+                              fixed_cols, header_groups,
+                              trailing_cols=None, col_widths=None,
+                              subject_col=None):
+    """导出带两层合并表头的 Excel 清单。
+
+    适用于"用药后异常有临床意义"系列清单：固定列 + 分组表头（首次用药前/后）+ 尾列。
+
+    Parameters
+    ----------
+    df : DataFrame
+        输出数据（不含 DataFrame 级表头，列序需与 schema 匹配）。
+    output_path : str
+        输出文件路径。
+    sheet_name : str
+        工作表名称。
+    title : str
+        标题前缀，函数自动追加 " (N例次M例)"。
+    fixed_cols : list[str]
+        跨两行合并的固定列名。
+    header_groups : list[dict]
+        分组表头定义，每项 ``{'label': str, 'children': list[str]}``。
+    trailing_cols : list[str], optional
+        尾列名（跨两行合并），默认无。
+    col_widths : list[tuple], optional
+        列宽定义，每项 ``(start_col, end_col, width)``。
+    subject_col : str, optional
+        用于计算唯一例数的列名，标题中显示 "(N例次M例)"。
+    """
+    total_cols = len(fixed_cols) \
+               + sum(len(g['children']) for g in header_groups) \
+               + len(trailing_cols or [])
+    assert total_cols == df.shape[1], \
+        f'列数不匹配: schema={total_cols}, df={df.shape[1]}'
+
+    n_rows = len(df)
+    n_subj = df[subject_col].nunique() if subject_col else None
+
+    with pd.ExcelWriter(output_path, engine='xlsxwriter') as writer:
+        df.to_excel(writer, sheet_name=sheet_name, startrow=3,
+                    index=False, header=False)
+        wb = writer.book
+        ws = writer.sheets[sheet_name]
+
+        hdr_fmt = wb.add_format({
+            'bold': True, 'align': 'center', 'valign': 'vcenter',
+            'border': 1, 'bg_color': '#D3D3D3',
+        })
+        title_fmt = wb.add_format({
+            'bold': True, 'align': 'center', 'valign': 'vcenter',
+            'font_size': 14,
+        })
+        data_fmt = wb.add_format({'border': 1, 'valign': 'vcenter'})
+
+        # 标题
+        if n_subj is not None:
+            title_text = f'{title} ({n_rows}例次{n_subj}例)'
+        else:
+            title_text = f'{title} ({n_rows}条)'
+        ws.merge_range(0, 0, 0, total_cols - 1, title_text, title_fmt)
+
+        # 固定列（跨两行）
+        for i, name in enumerate(fixed_cols):
+            ws.merge_range(1, i, 2, i, name, hdr_fmt)
+
+        # 分组表头（parent 合并 row 1，children 写 row 2）
+        col = len(fixed_cols)
+        for group in header_groups:
+            n_ch = len(group['children'])
+            ws.merge_range(1, col, 1, col + n_ch - 1,
+                           group['label'], hdr_fmt)
+            for j, child in enumerate(group['children']):
+                ws.write(2, col + j, child, hdr_fmt)
+            col += n_ch
+
+        # 尾列（跨两行）
+        for name in (trailing_cols or []):
+            ws.merge_range(1, col, 2, col, name, hdr_fmt)
+            col += 1
+
+        # 列宽
+        if col_widths:
+            for start, end, width in col_widths:
+                ws.set_column(start, end, width)
+
+        # 数据区边框
+        for r in range(n_rows):
+            for c in range(total_cols):
+                val = df.iloc[r, c]
+                if pd.isna(val):
+                    val = ''
+                ws.write(r + 3, c, val, data_fmt)
+
+    print(f'{title}已保存为 \'{output_path}\'')
