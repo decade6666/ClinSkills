@@ -50,6 +50,29 @@ OUTPUT_COLS = [VAR_SUBJ, VAR_SCREEN_NO, ...]
 - `VAR_*`（中间）：出现在归一化、筛选、派生、连接步骤的逻辑中
 - `VAR_*`（输出）+ `OUTPUT_COLS`：只出现在 rename 映射和最终选列中
 
+## 编码字段与解码后缀
+
+EDC 导出的 Excel 中，带编码表的字段有两列：
+- **码值列**（如 `临床评估`）：存储编码值（如 1=正常, 2=异常无临床意义, 99=其他）
+- **解码列**（加后缀，如 `临床评估_TXT`）：存储显示文本
+
+**规则：脚本中必须使用解码列，不使用码值列。** 后缀因 EDC 系统而异，见 CLAUDE.md 的 Conventions（如太美5/太美6 → `_TXT`，赛美斯 → `_DEC`）。
+
+判断依据——`query_metadata.py` 的 `fields` 输出中，带编码表的字段（格式为 `DropDownList`、`RadioButton`、`CheckBox` 等）都需要读解码列。`hasOther` 标记的字段尤其重要：用户选"其他"时码值列为编码（如 99），实际文本只在解码列中。
+
+`IMPORT_*` 中写原始列名（含后缀），`_RENAME_MAP` 中去掉后缀映射为语义名：
+
+```python
+# IMPORT_* 写解码列名（含后缀）
+IMPORT_PE = ["临床评估_TXT", "异常，请描述_TXT"]
+
+# _RENAME_MAP 去掉后缀
+_RENAME_MAP = {
+    "临床评估_TXT":    VAR_CS,     # "临床意义"
+    "异常，请描述_TXT": VAR_DESC,   # "异常描述"
+}
+```
+
 ## 变量命名前缀
 
 | 类别 | 前缀 | 示例 |

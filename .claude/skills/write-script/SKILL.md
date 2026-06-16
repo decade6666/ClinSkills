@@ -69,7 +69,7 @@ python .claude/skills/write-script/scripts/query_metadata.py <command> [args]
 1. 先 `search` 需求中的关键字，定位候选字段
 2. 再 `fields <表单名>` 确认字段详情（格式、编码表）
 3. 涉及编码值时 `codelist <名称>` 查看枚举
-4. 确认哪些字段的列名带 `_TXT` 后缀（EDC 中表示文本值，load_sheet 读取时需加 `_TXT`）
+4. 确认哪些字段需要解码列（选项型字段需读 `itemName` + 解码后缀，后缀见 CLAUDE.md 的 Conventions）
 
 **注意：** EDC 的 sheet 名就是表单 OID（如 `DS_END`、`EC_ED`、`SV`），不是中文表单名。`formOID` 字段就是 `load_sheet` 的第一个参数。
 
@@ -81,11 +81,11 @@ python .claude/skills/write-script/scripts/query_metadata.py <command> [args]
 | `formName` | 表单中文名 | 查询时定位表单 |
 | `sasFieldName` | SAS 字段名（英文） | SAS 到 pandas 的映射参考 |
 | `itemName` | 字段中文标签 = Excel 列名 | `IMPORT_*` / `load_sheet` 的 `cols` 参数 |
-| `fieldFormat` | 字段类型（DropDownList / RadioButton / LongText / Date 等） | 判断是否需要 `_TXT` 列 |
+| `fieldFormat` | 字段类型（DropDownList / RadioButton / LongText / Date 等） | 判断是否需要解码列 |
 | `codeList` | 编码表引用（name / count） | `codelist` 命令查枚举值 |
-| `codeList.hasOther` | 是否含"其他"自由文本选项 | 必须读 `_TXT` 列，码值列只有 99 |
+| `codeList.hasOther` | 是否含"其他"自由文本选项 | 必须读解码列，码值列只有编码 |
 
-有 `codeList` 的字段一定有两列：码值列（`itemName`）和文本列（`itemName` + `_TXT`）。脚本中始终用 `_TXT` 列。
+有 `codeList` 的字段一定有两列：码值列（`itemName`）和解码列（`itemName` + 后缀）。脚本中始终用解码列。后缀因 EDC 系统而异，见 CLAUDE.md 的 Conventions。
 
 ### 3. 编写脚本
 
@@ -101,7 +101,7 @@ python .claude/skills/write-script/scripts/query_metadata.py <command> [args]
 Read .claude/skills/write-script/reference/coding-guide.md
 ```
 
-### 9. 运行验证
+### 4. 运行验证
 
 脚本编写或修改完成后，**必须实际运行**，不得跳过。
 
