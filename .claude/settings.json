@@ -16,10 +16,11 @@
       "Edit(注意事项.md)",
       "Edit(.gitignore)",
       "Edit(CLAUDE.md)",
+      "Edit(.claude/**)",
       "Write(scripts/**)",
       "Write(utils/**)",
       "Bash(python scripts/**)",
-      "Bash(.venv/Scripts/python.exe scripts/**)",
+      "Bash(python .claude/skills/**)",
       "Bash(python -c *)",
       "Bash(pip install *)",
       "Bash(git *)"
