@@ -5,7 +5,7 @@
 
 ## Directory Structure
 ```
-├── env.py              # 项目环境入口（加载依赖和 config.yaml）
+├── config.py           # 项目路径配置（从 config.yaml 加载路径变量）
 ├── config.yaml         # 数据路径配置
 ├── requirements.txt    # Python 依赖
 ├── 注意事项.md          # 业务规则说明
@@ -34,13 +34,12 @@
 - `raw/`、`output/`：不在 Git 中
 
 ## Conventions
-- 脚本通过标准 Python import 加载环境：`from env import pd, np, output_path, ...`
+- 脚本通过标准 Python import 加载环境：`import pandas as pd` + `from config import output_path` + `from utils.output_format import save_table_to_docx_threeline`
 - 路径引导代码：`sys.path.insert(0, project_root)` 后 import（见已有脚本模板）
 - 报表函数来自 `utils/output_format.py`
 - 数据读取函数来自 `utils/loaders.py`（`load_sheet` / `load_rand` 等）
 - 生成文件路径由 `config.yaml` 的 `output_path` 控制（env.py 自动解析为绝对路径）
 - 虚拟环境位于 `.venv/`，安装依赖：`pip install -r requirements.txt`
-- `env.py` 也可在 Jupyter 中通过 `%run` 直接运行（变量注入当前命名空间）
 
 ## 命名规范
 

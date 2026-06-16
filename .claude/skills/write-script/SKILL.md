@@ -94,11 +94,16 @@ _project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".
 if _project_root not in sys.path:
     sys.path.insert(0, _project_root)
 
-from env import pd, np, output_path, save_table_to_docx_threeline
+import pandas as pd
+import numpy as np
+from config import output_path
+from utils.output_format import save_table_to_docx_threeline
 from utils.loaders import load_rand, load_sheet
 ```
 
-- `from env import …` 按需引入，只列脚本实际用到的对象
+- `pd`、`np` 直接 import，不经过任何中间模块
+- `output_path` 等路径变量从 `config.py` 导入
+- 报表函数从 `utils.output_format` 按需导入（`save_table_to_docx_threeline`、`export_to_excel_with_format`）
 - 数据读取统一走 `utils/loaders.py` 的 `load_sheet` / `load_rand`，不直接调用 `pd.read_excel`
 - 禁止使用 `# %%` Jupyter cell 标记
 

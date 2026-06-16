@@ -3,7 +3,10 @@ _project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".
 if _project_root not in sys.path:
     sys.path.insert(0, _project_root)
 
-from env import pd, np, output_path, save_table_to_docx_threeline
+import pandas as pd
+import numpy as np
+from config import output_path
+from utils.output_format import save_table_to_docx_threeline
 from utils.loaders import load_rand, load_sheet
 
 # ── 列名集中管理 ──
