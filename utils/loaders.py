@@ -70,6 +70,19 @@ def load_completion(path=None):
     return df
 
 
+def load_sc_demographics(cols, path=None):
+    """读取 SC sheet 中"人口学资料"页面的记录。
+
+    SC sheet 含"受试者信息"和"人口学资料"两个页面，
+    本函数自动过滤为"人口学资料"并去掉页面名称列。
+    """
+    page_col = "页面名称"
+    load_cols = list(dict.fromkeys(cols + [page_col]))  # 去重保序
+    df = load_sheet("SC", load_cols, path)
+    df = df[df[page_col] == "人口学资料"].drop(columns=page_col)
+    return df
+
+
 def load_first_dose(path=None):
     """读取 EC_ED，返回每受试者最早用药开始日期。"""
     ec = load_sheet("EC_ED", ["受试者", "开始日期"], path).fillna("")
