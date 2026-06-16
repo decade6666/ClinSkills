@@ -1,147 +1,172 @@
-# %%
-# %run ../../env.py
-from utils.loaders import load_first_dose
-from utils.loaders import load_completion
-from utils.loaders import load_rand
+import sys, os
+_project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+if _project_root not in sys.path:
+    sys.path.insert(0, _project_root)
 
-# %%
-index = ["受试者", "受试者状态", "访视名称", "页面名称"]
-sig =["病史名称", "不良事件名称", "帕金森病_TXT", "其他，请说明"]
+import pandas as pd
+import numpy as np
+from config import output_path
+from utils.loaders import load_sheet, load_first_dose, load_completion, load_rand
+from utils.output_format import export_to_excel_twoheader
 
-# %% [markdown]
-# ## 12导联心电图
+# ── 列名集中管理 ──
 
-# %%
+# 导入列名
+VAR_SUBJ        = "受试者"
+VAR_STATUS      = "受试者状态"
+VAR_VISIT       = "访视名称"
+VAR_PAGE        = "页面名称"
+IMPORT_BASE = [VAR_SUBJ, VAR_STATUS, VAR_VISIT, VAR_PAGE]
+IMPORT_COLS = IMPORT_BASE + ["检查日期", "临床评估_TXT", "如异常请详述",
+                              "异常，请描述_TXT", "病史名称", "不良事件名称", "其他,请说明"]
 
-# 没有检查结果字段，则直接将临床意义结果视为检查结果
+# 中间列名
+VAR_ASSESS_DATE = "检查日期"
+VAR_ITEM        = "检查项"
+VAR_RESULT      = "结果"
+VAR_CS          = "临床意义"
+VAR_DESC        = "异常描述"
+VAR_FIRST_DOSE  = "服药日期"
+VAR_GROUP       = "分组"
+VAR_MH          = "病史名称"
+VAR_AE          = "不良事件名称"
+VAR_OTHER       = "其他请说明"
+VAR_CS_DESC     = "异常有临床意义，请描述"
 
-cols1 = ["检查日期", "临床意义_TXT", "异常描述"]
-# cols2 = ["心率", "QT", "QTcF", "PR间期"]
-# cols3 = ["心率_UNIT", "QT_UNIT", "QTcF_UNIT", "PR间期_UNIT"]
+# 输出列名
+VAR_SCREEN_NO   = "筛选号"
+VAR_RAND_NO     = "随机号"
+VAR_FORM        = "表单名称"
+VAR_VISIT_PRE   = "访视名称_首次用药前"
+VAR_VISIT_POST  = "访视名称_首次用药后"
+VAR_DATE_PRE    = "检查日期_首次用药前"
+VAR_DATE_POST   = "检查日期_首次用药后"
+VAR_RESULT_PRE  = "检查结果_首次用药前"
+VAR_RESULT_POST = "检查结果_首次用药后"
+VAR_CS_PRE      = "临床意义_首次用药前"
+VAR_CS_POST     = "临床意义_首次用药后"
+VAR_DESC_PRE    = "异常描述_首次用药前"
+VAR_DESC_POST   = "异常描述_首次用药后"
+VAR_CS_DESC_POST = "异常有临床意义，请描述_首次用药后"
+VAR_COMPLETED   = "是否完成试验"
 
-EG = pd.read_excel(raw_path, sheet_name = "EG", header = 0, skiprows = [1], usecols = index + cols1 + sig)
+OUTPUT_COLS = [
+    VAR_SCREEN_NO, VAR_RAND_NO, VAR_FORM, VAR_ITEM,
+    VAR_VISIT_PRE, VAR_DATE_PRE, VAR_RESULT_PRE, VAR_CS_PRE, VAR_DESC_PRE,
+    VAR_VISIT_POST, VAR_DATE_POST, VAR_RESULT_POST, VAR_CS_POST, VAR_DESC_POST,
+    VAR_CS_DESC_POST, VAR_COMPLETED,
+]
 
-EG = EG.rename(columns={
-    "检查日期":"评估日期",
-    "临床意义_TXT":"临床意义",
-})
+# EG 表头与中间列名映射
+_RENAME_MAP = {
+    "检查日期":     VAR_ASSESS_DATE,
+    "临床评估_TXT": VAR_CS,
+    "如异常请详述": VAR_DESC,
+    "其他,请说明":  VAR_OTHER,
+}
 
-EG["项目"] = EG["页面名称"]
-EG["结果"] = EG["临床意义"]
+PREFIX_MAP = {VAR_MH: "MH:", VAR_AE: "AE:", VAR_OTHER: "其他:"}
 
-# %%
-df = pd.concat([EG])
-df = df[(df["受试者状态"] != "筛选失败") & (df["临床意义"].notna())]
+# ── 1 读取 ──
+df_eg = load_sheet("EG", cols=IMPORT_COLS)
 
-# 单个受试者最早服药日期，用来判断当前检查是给药前分组，还是给药后的分组
+# ── 2 归一化 ──
+df_eg = df_eg.rename(columns=_RENAME_MAP)
+df_eg[VAR_ASSESS_DATE] = pd.to_datetime(df_eg[VAR_ASSESS_DATE], errors="coerce")
+df_eg[VAR_ITEM] = df_eg[VAR_PAGE]
+df_eg[VAR_RESULT] = df_eg[VAR_CS]
 
-cols1 = ["服药日期"]
-cols2 = ["受试者"]
+# ── 3 筛选：排除筛选失败 + 有临床评估 ──
+df_all = df_eg[
+    (df_eg[VAR_STATUS] != "筛选失败") & df_eg[VAR_CS].notna()
+].copy()
 
-EC = load_first_dose().rename(columns={"首次用药日期": "服药日期"})
+# ── 6 连接：合并首次用药、完成状态、随机号 ──
+df_first_dose = load_first_dose().rename(columns={"首次用药日期": VAR_FIRST_DOSE})
+df_completion = load_completion()
+df_rand = load_rand(cols=["受试者", "随机号"])
 
-DS_END = load_completion()
-
-RAND = load_rand(cols=['受试者', '随机号'])
-
-df = (df.merge(EC, on = cols2, how = "left")
-        .merge(DS_END, on = cols2, how = "left")
-        .merge(RAND, on = "受试者", how = "left")
-     )
-
-df["分组"] = df.apply( lambda row: "给药前检查" if row["评估日期"] <= row["服药日期"] else "给药后检查", axis=1 )
-
-# 给药前的检查数据
-# 离首次给药日期最近
-# 检查结果正常或异常无临床意义
-pre = df.drop(columns=sig)
-pre = pre[pre["分组"] == "给药前检查"]
-pre = pre.sort_values(by=["受试者", "页面名称", "项目", "服药日期"])
-
-gcols = ["受试者", "页面名称", "项目"]
-
-def pick_rows(g):
-    base = g[g["访视名称"].eq("基线期（V2，D1）")]
-    if not base.empty:
-        if (base["临床意义"] == "异常有临床意义").any():
-            return g.iloc[0:0]
-        return base
-
-    scr = g[g["访视名称"].eq("筛选期（V1，D-15~-13）")]
-    scr = scr[scr["临床意义"].ne("异常有临床意义")]
-    if not scr.empty:
-        return scr
-
-    return g.iloc[0:0]
-
-pre = (
-    pre.groupby(gcols, group_keys=False)
-       .apply(pick_rows)
-       .reset_index(drop=True)
+df_all = (
+    df_all.merge(df_first_dose, on=[VAR_SUBJ], how="left")
+          .merge(df_completion, on=[VAR_SUBJ], how="left")
+          .merge(df_rand,       on=[VAR_SUBJ], how="left")
 )
 
+# ── 5 派生：给药前/后分组 ──
+df_all[VAR_GROUP] = np.where(
+    df_all[VAR_ASSESS_DATE] <= df_all[VAR_FIRST_DOSE],
+    "给药前检查", "给药后检查",
+)
 
-prefix_map = { "病史名称": "MH:", "不良事件名称": "AE:", "帕金森病_TXT": "研究疾病:", "其他，请说明": "其他:" }
-post = df[(df["分组"] == "给药后检查") & (df["临床意义"] == "异常有临床意义")].copy()
-post["异常有临床意义，请描述"] = post[sig].apply(
+# ── 3 筛选：给药前 — 排除基线期有 CS 异常的分组 ──
+df_pre = df_all[df_all[VAR_GROUP] == "给药前检查"]
+df_pre = df_pre.sort_values(by=[VAR_SUBJ, VAR_PAGE, VAR_ITEM, VAR_FIRST_DOSE])
+
+GROUP_COLS = [VAR_SUBJ, VAR_PAGE, VAR_ITEM]
+
+def _pick_pre_rows(g):
+    """基线期 CS 则整体排除；否则保留全部。"""
+    if (g[VAR_CS] == "异常有临床意义").any():
+        return g.iloc[0:0]
+    return g
+
+df_pre_group_cols = df_pre[GROUP_COLS].copy()
+df_pre = (
+    df_pre.groupby(GROUP_COLS, group_keys=False)
+          .apply(_pick_pre_rows)
+)
+df_pre = df_pre.join(df_pre_group_cols).reset_index(drop=True)
+
+# ── 5 派生：给药后 — 异常有临床意义描述文本 ──
+df_post = df_all[
+    (df_all[VAR_GROUP] == "给药后检查") & (df_all[VAR_CS] == "异常有临床意义")
+].copy()
+
+desc_cols = [VAR_MH, VAR_AE, VAR_OTHER]
+df_post[VAR_CS_DESC] = df_post[desc_cols].apply(
     lambda row: ";".join(
-        f"{prefix_map[col]}{str(val).replace('√', '帕金森病')}"
+        f"{PREFIX_MAP.get(col, col)}{str(val).replace('√', '帕金森病')}"
         for col, val in row.items()
-        if pd.notna(val) and str(val).strip() != "" ), axis=1 )
+        if pd.notna(val) and str(val).strip() != ""
+    ),
+    axis=1,
+)
 
-post = post[["受试者", "访视名称", "页面名称", "评估日期", "项目", "结果", "临床意义", "异常描述", "异常有临床意义，请描述"]]
+df_post = df_post[[VAR_SUBJ, VAR_VISIT, VAR_PAGE, VAR_ASSESS_DATE,
+                    VAR_ITEM, VAR_RESULT, VAR_CS, VAR_DESC, VAR_CS_DESC]]
 
-merge = pre.merge(post, on = ["受试者", "页面名称", "项目"], how = "left")
-merge = merge[~((merge["结果_x"].isna()) | (merge["结果_y"].isna()))]
+# ── 6 连接：用药前 + 用药后 ──
+df_merge = df_pre.merge(df_post, on=[VAR_SUBJ, VAR_PAGE, VAR_ITEM], how="left")
+df_merge = df_merge[~(df_merge[f"{VAR_RESULT}_x"].isna() | df_merge[f"{VAR_RESULT}_y"].isna())]
 
-merge = merge.rename(columns = {
-    "访视名称_x":"访视名称_首次用药前",
-    "访视名称_y":"访视名称_首次用药后",
-    "结果_x":"检查结果_首次用药前",
-    "结果_y":"检查结果_首次用药后",
-    "评估日期_x":"检查日期_首次用药前",
-    "评估日期_y":"检查日期_首次用药后",
-    "临床意义_x":"临床意义_首次用药前",
-    "临床意义_y":"临床意义_首次用药后",
-    "异常描述_x":"异常描述_首次用药前",
-    "异常描述_y":"异常描述_首次用药后",
-    "异常有临床意义，请描述":"异常有临床意义，请描述_首次用药后",
-    "页面名称":"表单名称",
-    "项目":"检查项",
-    "受试者":"筛选号",
-    "是否完成试验_TXT":"是否完成试验",
+# ── 7 格式化 ──
+df_merge = df_merge.rename(columns={
+    f"{VAR_VISIT}_x":       VAR_VISIT_PRE,
+    f"{VAR_VISIT}_y":       VAR_VISIT_POST,
+    f"{VAR_RESULT}_x":      VAR_RESULT_PRE,
+    f"{VAR_RESULT}_y":      VAR_RESULT_POST,
+    f"{VAR_ASSESS_DATE}_x": VAR_DATE_PRE,
+    f"{VAR_ASSESS_DATE}_y": VAR_DATE_POST,
+    f"{VAR_CS}_x":          VAR_CS_PRE,
+    f"{VAR_CS}_y":          VAR_CS_POST,
+    f"{VAR_DESC}_x":        VAR_DESC_PRE,
+    f"{VAR_DESC}_y":        VAR_DESC_POST,
+    VAR_CS_DESC:            VAR_CS_DESC_POST,
+    VAR_PAGE:               VAR_FORM,
+    VAR_SUBJ:               VAR_SCREEN_NO,
+    "是否完成试验_TXT":     VAR_COMPLETED,
 })
 
-merge = merge[[
-    "筛选号",
-    "随机号",
-    "表单名称",
-    "检查项",
-    # "正常值范围下限",
-    # "正常值范围上限",
-    # "单位",
-    "访视名称_首次用药前",
-    "检查日期_首次用药前",
-    "检查结果_首次用药前",
-    "临床意义_首次用药前",
-    "异常描述_首次用药前",
-    "访视名称_首次用药后",
-    "检查日期_首次用药后",
-    "检查结果_首次用药后",
-    "临床意义_首次用药后",
-    "异常描述_首次用药后",
-    "异常有临床意义，请描述_首次用药后",
-    "是否完成试验",
-]]
-merge.insert(0, "No.", range(1, len(merge) + 1))
-merge['temp_id_visit'] = merge['筛选号'].astype(str) + merge['表单名称'].astype(str) + merge['检查项'].astype(str) + "_" + merge['访视名称_首次用药后'].astype(str)
+df_merge[VAR_DATE_PRE]  = df_merge[VAR_DATE_PRE].dt.strftime("%Y-%m-%d")
+df_merge[VAR_DATE_POST] = df_merge[VAR_DATE_POST].dt.strftime("%Y-%m-%d")
 
-# %%
-eg_merge = merge.copy().drop(columns = ["temp_id_visit"])
+df_merge = df_merge[OUTPUT_COLS]
+df_merge.insert(0, "No.", range(1, len(df_merge) + 1))
 
+# ── 8 输出 ──
 file_name = f"{output_path}/listing/表39-4 12导联心电图用药后检查异常有临床意义清单.xlsx"
 export_to_excel_twoheader(
-    eg_merge, file_name, "表39-4 用药后检查异常有临床意义清单",
+    df_merge, file_name, "表39-4 用药后检查异常有临床意义清单",
     title="表 39-4 用药后检查异常有临床意义清单",
     fixed_cols=['No.', '筛选号', '随机号', '表单名称', '检查项'],
     header_groups=[
