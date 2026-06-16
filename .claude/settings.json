@@ -26,5 +26,18 @@
       "Bash(pip install *)",
       "Bash(git *)"
     ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python .claude/hooks/syntax_check.py"
+          }
+        ]
+      }
+    ]
   }
 }
