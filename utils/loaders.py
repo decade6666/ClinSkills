@@ -64,12 +64,9 @@ def load_completion(path=None):
 
     返回 DataFrame，含 ["受试者", "是否完成试验"] 两列。
     """
-    df = load_sheet("DS_END", ["受试者", "页面名称", "是否完成试验_TXT"], path).fillna("")
+    df = load_sheet("DS_END", ["受试者", "页面名称", "受试者是否完成试验_TXT"], path).fillna("")
     df = df[df["页面名称"] == "试验完成情况总结"].drop(columns="页面名称")
-    if "受试者是否完成试验_TXT" in df.columns:
-        df = df.rename(columns={"受试者是否完成试验_TXT": "是否完成试验"})
-    else:
-        df = df.rename(columns={"是否完成试验_TXT": "是否完成试验"})
+    df = df.rename(columns={"受试者是否完成试验_TXT": "是否完成试验"})
     return df
 
 
