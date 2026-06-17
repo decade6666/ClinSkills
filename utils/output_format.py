@@ -1,15 +1,17 @@
+import os
 import pandas as pd
 from docx import Document
-from docx.shared import Pt, RGBColor, Inches, Cm
+from docx.shared import Pt, Cm
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.enum.section import WD_ORIENT
 from docx.enum.table import WD_TABLE_ALIGNMENT
+from openpyxl import load_workbook, Workbook
+from openpyxl.utils import get_column_letter
+from openpyxl.styles import Alignment, Font, PatternFill, Border, Side
 
-# utils.py
 
-# utils/utils.py
 def set_cell_border(cell, **kwargs):
     """
     设置单元格边框
@@ -429,235 +431,122 @@ def save_table_to_docx_threeline(df: pd.DataFrame, output_path: str, title: str,
     print(f"{title}已保存为 '{output_path}'")
 
 
-import pandas as pd
-import numpy as np
-import re
-import os
-
 def export_to_excel_with_format(df, output_path, sheet_name, title_name, add_title=True):
+    """将 DataFrame 输出为格式化的 Excel 清单（xlsxwriter）。"""
     num_cols = df.shape[1]
-    
+    num_rows = df.shape[0]
+    header_row = 1 if add_title else 0
+    data_start_row = header_row + 1
+
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+
     with pd.ExcelWriter(output_path, engine='xlsxwriter') as writer:
-        # 关键：先写入数据，但不要让 pandas 写表头，我们手动写
-        header_row = 1 if add_title else 0
-        data_start_row = header_row + 1
-        
-        df.to_excel(writer, sheet_name=sheet_name, startrow=data_start_row, index=False, header=False)
-        
         workbook = writer.book
-        worksheet = writer.sheets[sheet_name]
-        
-        style_config = {
-            'header': {
-                'bold': True,
-                'align': 'center',
-                'valign': 'vcenter',
-                'border': 1,
-                'bg_color': '#D3D3D3'
-            },
-            'title': {
-                'bold': True,
-                'align': 'center',
-                'valign': 'vcenter',
-                'font_size': 14
-            },
-            'data': {
-                'border': 1,
-                'valign': 'vcenter',
-                'align': 'left'
-            }
-        }
-        
-        fmt_header = workbook.add_format(style_config['header'])
-        fmt_title = workbook.add_format(style_config['title'])
-        fmt_data = workbook.add_format(style_config['data'])
-        
+        worksheet = writer.sheets[sheet_name] if sheet_name in writer.sheets \
+            else workbook.add_worksheet(sheet_name)
+
+        fmt_header = workbook.add_format({
+            'bold': True, 'align': 'center', 'valign': 'vcenter',
+            'border': 1, 'bg_color': '#D3D3D3',
+        })
+        fmt_title = workbook.add_format({
+            'bold': True, 'align': 'center', 'valign': 'vcenter',
+            'font_size': 14,
+        })
+        fmt_data = workbook.add_format({
+            'border': 1, 'valign': 'vcenter', 'align': 'left',
+        })
+
         if add_title:
             worksheet.merge_range(0, 0, 0, num_cols - 1, title_name, fmt_title)
-        
-        # 写表头
-        for col_num, value in enumerate(df.columns.values):
-            worksheet.write(header_row, col_num, value, fmt_header)
-        
-        # 应用数据区域边框
-        rows, cols = df.shape
-        for r in range(rows):
-            for c in range(cols):
+
+        # 表头
+        for c, col_name in enumerate(df.columns):
+            worksheet.write(header_row, c, col_name, fmt_header)
+
+        # 数据 + 自动列宽
+        col_max_len = [len(str(col)) for col in df.columns]
+        for r in range(num_rows):
+            for c in range(num_cols):
                 val = df.iloc[r, c]
                 if pd.isna(val):
-                    val = ""
+                    val = ''
                 worksheet.write(data_start_row + r, c, val, fmt_data)
-        
-        worksheet.set_column(0, num_cols - 1, 15)
-        
-        # 你原来的筛选逻辑：有title从第1行开始，无title从第0行开始
-        # 结束行应该是最后一行数据
-        worksheet.autofilter(header_row, 0, data_start_row + rows - 1, cols - 1)
-        
-    print(f"Sheet '{sheet_name}' 已成功覆盖导出至: {output_path}")
+                col_max_len[c] = max(col_max_len[c], len(str(val)))
 
-# --- 使用示例 ---
-# export_to_excel_with_format(res, "统计结果.xlsx", "汇总表", "表 39 不良事件汇总表 (10 例次 5 例)", add_title=True)
+        for c, width in enumerate(col_max_len):
+            worksheet.set_column(c, c, min(width + 2, 50))
 
-import os
-import pandas as pd
-from openpyxl import load_workbook, Workbook
-from openpyxl.utils import get_column_letter
-from openpyxl.styles import Alignment, Font, PatternFill, Border, Side
+        # 筛选
+        worksheet.autofilter(header_row, 0, data_start_row + num_rows - 1, num_cols - 1)
+
+    print(f"Sheet '{sheet_name}' 已成功导出至: {output_path}")
 
 def export_to_one_excel_with_format(df, output_path, sheet_name, title_name=None, add_title=True):
-    """
-    每次调用时向指定的文件中写入一个新的 sheet，如果 sheet 名称已存在则覆盖，否则新增。
-    
-    df: 要写入的 DataFrame
-    output_path: 输出文件路径
-    sheet_name: 要写入的 sheet 名称
-    title_name: 大标题名称 (如果需要)
-    add_title: 是否添加大标题，默认为 True
-    """
-    
-    # 如果文件已存在，首先读取它
+    """向指定文件写入一个 sheet（已存在则覆盖，否则新建），使用 openpyxl。"""
     if os.path.exists(output_path):
-        # 使用 openpyxl 加载现有工作簿
         workbook = load_workbook(output_path)
-        
         if sheet_name in workbook.sheetnames:
-            # 如果 sheet 存在，则先删除旧的 sheet
             del workbook[sheet_name]
-        
-        # 新建 sheet，并写入数据
         worksheet = workbook.create_sheet(sheet_name)
-        
-        # 将数据写入 sheet
-        num_cols = df.shape[1]
-        start_row = 2 if add_title else 1
-        for i, (_, row) in enumerate(df.iterrows(), start=0):
-            for c, value in enumerate(row, start=1):
-                worksheet.cell(row=start_row + i, column=c, value=value)
-
-        
-        # --- 2. 样式定义 ---
-        header_font = Font(bold=True)  # 表头加粗
-        header_fill = PatternFill(start_color="D3D3D3", end_color="D3D3D3", fill_type="solid")
-        header_alignment = Alignment(horizontal="center", vertical="center")
-        
-        title_font = Font(bold=True, size=14)  # 标题加粗
-        title_alignment = Alignment(horizontal="center", vertical="center")
-
-        data_border = Border(left=Side(border_style="thin"), right=Side(border_style="thin"), 
-                             top=Side(border_style="thin"), bottom=Side(border_style="thin"))
-        data_font = Font(bold=False)  # 数据不加粗
-
-        # --- 3. 写入大标题 ---
-        if add_title and title_name:
-            worksheet.merge_cells(start_row=1, start_column=1, end_row=1, end_column=num_cols)
-            worksheet["A1"].value = title_name
-            worksheet["A1"].font = title_font
-            worksheet["A1"].alignment = title_alignment
-
-        # --- 4. 覆盖默认表头样式 ---
-        for col_num, value in enumerate(df.columns.values):
-            cell = worksheet.cell(row=2 if add_title else 1, column=col_num + 1)
-            cell.value = value
-            cell.font = header_font
-            cell.fill = header_fill
-            cell.alignment = header_alignment
-
-        # --- 5. 应用数据区域边框和字体样式 ---
-        rows, cols = df.shape
-        for r in range(rows):
-            for c in range(cols):
-                val = df.iloc[r, c]
-                if pd.isna(val):
-                    val = ""
-                cell = worksheet.cell(row=r + (3 if add_title else 2), column=c + 1)
-                cell.value = val
-                cell.border = data_border
-                cell.font = data_font
-
-        # 设置默认列宽
-        for col_num in range(cols):
-            worksheet.column_dimensions[get_column_letter(col_num + 1)].width = 15
-
-        # --- 6. 开启筛选 ---
-        # 筛选从第二行开始（如果有标题），从第一行开始（如果没有标题）
-        # rows = df.shape[0], cols = df.shape[1]
-        if rows >= 1 and cols >= 1:
-            last_col = get_column_letter(cols)
-            start_row = 2 if add_title else 1
-            last_row = rows + 2 if add_title else rows + 1
-            worksheet.auto_filter.ref = f"A{start_row}:{last_col}{last_row}"
-
-        # 保存工作簿
-        workbook.save(output_path)
-
     else:
-        # 如果文件不存在，则创建新文件并写入数据
+        os.makedirs(os.path.dirname(output_path), exist_ok=True)
         workbook = Workbook()
         worksheet = workbook.active
         worksheet.title = sheet_name
 
-        # 将数据写入 sheet
-        num_cols = df.shape[1]
-        for i, (_, row) in enumerate(df.iterrows(), start=0):
-            for c, value in enumerate(row):
-                worksheet.cell(row=i + (2 if add_title else 1), column=c + 1, value=value)
+    num_cols = df.shape[1]
+    rows, cols = df.shape
 
-        # --- 2. 样式定义 ---
-        header_font = Font(bold=True)  # 表头加粗
-        header_fill = PatternFill(start_color="D3D3D3", end_color="D3D3D3", fill_type="solid")
-        header_alignment = Alignment(horizontal="center", vertical="center")
-        
-        title_font = Font(bold=True, size=14)  # 标题加粗
-        title_alignment = Alignment(horizontal="center", vertical="center")
+    # 样式
+    header_font = Font(bold=True)
+    header_fill = PatternFill(start_color="D3D3D3", end_color="D3D3D3", fill_type="solid")
+    header_alignment = Alignment(horizontal="center", vertical="center")
+    title_font = Font(bold=True, size=14)
+    title_alignment = Alignment(horizontal="center", vertical="center")
+    data_border = Border(
+        left=Side(border_style="thin"), right=Side(border_style="thin"),
+        top=Side(border_style="thin"), bottom=Side(border_style="thin"),
+    )
 
-        data_border = Border(left=Side(border_style="thin"), right=Side(border_style="thin"), 
-                             top=Side(border_style="thin"), bottom=Side(border_style="thin"))
-        data_font = Font(bold=False)  # 数据不加粗
+    # 大标题
+    header_row = 2 if add_title else 1
+    if add_title and title_name:
+        worksheet.merge_cells(start_row=1, start_column=1, end_row=1, end_column=num_cols)
+        worksheet["A1"].value = title_name
+        worksheet["A1"].font = title_font
+        worksheet["A1"].alignment = title_alignment
 
-        # --- 3. 写入大标题 ---
-        if add_title and title_name:
-            worksheet.merge_cells(start_row=1, start_column=1, end_row=1, end_column=num_cols)
-            worksheet["A1"].value = title_name
-            worksheet["A1"].font = title_font
-            worksheet["A1"].alignment = title_alignment
+    # 表头
+    for c, col_name in enumerate(df.columns):
+        cell = worksheet.cell(row=header_row, column=c + 1)
+        cell.value = col_name
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = header_alignment
 
-        # --- 4. 覆盖默认表头样式 ---
-        for col_num, value in enumerate(df.columns.values):
-            cell = worksheet.cell(row=2 if add_title else 1, column=col_num + 1)
-            cell.value = value
-            cell.font = header_font
-            cell.fill = header_fill
-            cell.alignment = header_alignment
+    # 数据 + 自动列宽
+    col_max_len = [len(str(col)) for col in df.columns]
+    data_start = header_row + 1
+    for r in range(rows):
+        for c in range(cols):
+            val = df.iloc[r, c]
+            if pd.isna(val):
+                val = ""
+            cell = worksheet.cell(row=data_start + r, column=c + 1)
+            cell.value = val
+            cell.border = data_border
+            col_max_len[c] = max(col_max_len[c], len(str(val)))
 
-        # --- 5. 应用数据区域边框和字体样式 ---
-        rows, cols = df.shape
-        for r in range(rows):
-            for c in range(cols):
-                val = df.iloc[r, c]
-                if pd.isna(val):
-                    val = ""
-                cell = worksheet.cell(row=r + (3 if add_title else 2), column=c + 1)
-                cell.value = val
-                cell.border = data_border
-                cell.font = data_font
-        
-        # 设置默认列宽
-        for col_num in range(cols):
-            col_letter = get_column_letter(col_num + 1)  # 使用 openpyxl 提供的列字母函数
-            worksheet.column_dimensions[col_letter].width = 15
-        
-        # --- 6. 开启筛选 ---
-        # 使用 get_column_letter 动态生成列范围
-        if add_title:
-            worksheet.auto_filter.ref = f"A2:{get_column_letter(cols)}{rows + 2}"
-        else:
-            worksheet.auto_filter.ref = f"A1:{get_column_letter(cols)}{rows + 1}"
+    for c, width in enumerate(col_max_len):
+        worksheet.column_dimensions[get_column_letter(c + 1)].width = min(width + 2, 50)
 
+    # 筛选
+    if rows >= 1 and cols >= 1:
+        last_col = get_column_letter(cols)
+        worksheet.auto_filter.ref = f"A{header_row}:{last_col}{data_start + rows - 1}"
 
-        # 保存工作簿
-        workbook.save(output_path)
-
+    workbook.save(output_path)
     print(f"Sheet '{sheet_name}' 已成功导出至: {output_path}")
 
 
