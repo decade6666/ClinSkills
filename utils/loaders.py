@@ -40,6 +40,7 @@ def load_sheet(
     form_oid: str,
     usecols: list[str] | None = None,
     form_name: str | None = None,
+    dtype: dict | type | None = None,
 ) -> pd.DataFrame:
     """读取 EDC 导出 Excel 的指定 sheet。
 
@@ -47,9 +48,10 @@ def load_sheet(
         form_oid: 表单 OID（即 sheet 名的核心部分）
         usecols: 只读取指定列（中文列名列表）
         form_name: 表单中文名（cmis 用于拼接 sheet 名；省略则自动从元数据查找）
+        dtype: 列类型覆盖（传给 pd.read_excel 的 dtype 参数，用于保留前导零等）
 
     Returns:
         DataFrame
     """
     sheet = _resolve_sheet_name(form_oid, form_name)
-    return pd.read_excel(raw_path, sheet_name=sheet, header=0, skiprows=[1], usecols=usecols)
+    return pd.read_excel(raw_path, sheet_name=sheet, header=0, skiprows=[1], usecols=usecols, dtype=dtype)

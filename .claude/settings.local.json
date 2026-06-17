@@ -21,7 +21,9 @@
       "Bash(python -u \"04 scripts/01/清单01：不完整日期时间核查.py\")",
       "Bash(python -m venv .venv)",
       "Bash(.venv/Scripts/pip install *)",
-      "Bash(echo \"exit: $?\")"
+      "Bash(echo \"exit: $?\")",
+      "Bash(python -c \"import ast; ast.parse\\(open\\(r'04 scripts/01/清单01：不完整日期时间核查.py', encoding='utf-8'\\).read\\(\\)\\); print\\('语法检查通过'\\)\")",
+      "Bash(python -c \"import ast; ast.parse\\(open\\(r'04 scripts/01/清单02：自由文本核查.py', encoding='utf-8'\\).read\\(\\)\\); print\\('语法检查通过'\\)\")"
     ]
   }
 }
