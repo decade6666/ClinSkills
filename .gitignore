@@ -1,0 +1,6 @@
+*
+!.claude/
+!.claude/**/*
+!.gitignore
+!.gitattributes
+**/__pycache__/
