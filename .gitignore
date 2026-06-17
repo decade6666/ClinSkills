@@ -6,3 +6,4 @@
 !utils/
 !utils/**/*
 **/__pycache__/
+.venv/
