@@ -6,3 +6,5 @@
 !utils/
 !utils/**/*
 **/__pycache__/
+.venv/
+.claude/settings.local.json
