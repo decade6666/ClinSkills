@@ -1,7 +1,7 @@
 # 标准项目目录结构
 
 本文件是临床试验数据审核报告项目的标准目录结构。
-`build-metadata` skill 的 Step 0.5 以此为基准校验项目目录，如有偏离则自动修正。
+`build-metadata` skill 的 Step 1 以此为基准校验项目目录，如有偏离则自动修正。
 
 ## 目录树
 
@@ -109,14 +109,15 @@ Thumbs.db
 \```
 
 ## Permissions
-- `04 scripts/`、`utils/`、`config.py`、`config.yaml`：Claude Code 可编辑
-- `01 rawdata/`、`03 output/`：不在 Git 中
+- 可编辑：`04 scripts/`、`utils/`、`config.py`、`config.yaml`
+- 只读（Claude Code 可读不可写）：`01 rawdata/`
+- 由脚本写入（Claude Code 不直接操作）：`03 output/`（不入 Git）
 
 ## Conventions
 
 编码规范（变量前缀、列名集中管理、八步操作模型、脚本模板等）详见 `/write-script` skill 的 `SKILL.md`。以下为跨 skill 的通用约定：
 
-- 表头结构：`header=0, skiprows=[1]`（第 1 行中文列名，第 2 行英文列名被跳过）
+- 表头结构：`header=0, skiprows=[1]`（第 1 行英文 SAS 列名，第 2 行中文列名被跳过）
 - 报表函数来自 `utils/output_format.py`
 - 数据读取函数来自 `utils/loaders.py`（`load_sheet` / `load_rand` 等）
 - 生成文件路径由 `config.yaml` 的 `output_path` 控制（`config.py` 自动解析为绝对路径）
@@ -192,3 +193,5 @@ XlsxWriter>=3.1
 | `.claude/skills/write-script/scripts/query_metadata.py` | `_resolve_metadata_dir()` 默认路径 |
 | `make_template.py` | `EMPTY_DIRS` + 骨架模板 |
 | `.gitignore` | `rawdata/` / `output/` 规则 |
+| `.claude/skills/write-script/reference/coding-guide.md` | `04 scripts/` 引用 |
+| `.claude/skills/build-metadata/reference/project-structure.md` | 目录树 + sync checklist 自身 |
