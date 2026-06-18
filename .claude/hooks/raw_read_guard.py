@@ -27,8 +27,8 @@ _DATA_SUFFIXES = {".xlsx", ".xls", ".csv"}
 
 # Bash 命令中"读 raw 原始数据"的特征
 _RAW_READ_RE = re.compile(r"read_excel|load_workbook|ExcelFile|openpyxl|raw_path")
-_RAW_PATH_RE = re.compile(r"""raw[/\\][^"'\s]*\.(?:xlsx|xls|csv)""", re.IGNORECASE)
-_RUN_SCRIPT_RE = re.compile(r"""python[\w.]*\s+["']?scripts[/\\]""")
+_RAW_PATH_RE = re.compile(r"""(?:raw[/\\]|rawdata[/\\]|01\s+rawdata[/\\])[^"'\s]*\.(?:xlsx|xls|csv)""", re.IGNORECASE)
+_RUN_SCRIPT_RE = re.compile(r"""python[\w.]*\s+["']?(?:04\s+)?scripts[/\\]""")
 
 _DENY_RAW_REASON = (
     "严禁直接读取 raw 原始数据。按项目约定（constraints.md #2）应先用 "

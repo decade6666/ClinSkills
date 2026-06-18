@@ -51,8 +51,8 @@ def main():
 
     try:
         source = p.read_text(encoding="utf-8")
-    except OSError:
-        return 0  # 文件读不到（已删除/改名），放行
+    except (OSError, UnicodeDecodeError):
+        return 0  # 文件读不到或编码不兼容，放行
 
     try:
         ast.parse(source, filename=str(p))
