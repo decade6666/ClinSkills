@@ -1,0 +1,191 @@
+# ⚠ 模板文件——复制到 04 scripts/、改下方「项目配置」块后再运行
+#
+# @desc 核查「其他」选项的自由文本：选了「其他/其它」时，配套文本字段
+#       是否为空、或与已设预设选项重复。COMPANION_MAP 给出
+#       (formOID, fieldOID) → 配套自由文本 fieldOID 的映射，按项目填写。
+# @tags 其他,自由文本,hasOther,编码表,companion,选项核查
+# @config COMPANION_MAP
+
+import sys, json
+from pathlib import Path
+from collections import defaultdict
+
+_project_root = str(Path(__file__).resolve().parent.parent)
+if _project_root not in sys.path:
+    sys.path.insert(0, _project_root)
+
+import pandas as pd
+from config import output_path
+from utils.output_format import export_to_one_excel_with_format
+from utils.loaders import load_sheet, system_cols
+
+# ── 系统列（读取用 EDC 专属名，输出 rename 为通用中文标签）──
+
+_SYS = system_cols()
+_SU = _SYS["subject"]
+_RO = _SYS["row"]
+
+_OUT_SUBJ = "筛选号"
+_OUT_ROW  = "行号"
+_SYS_RENAME = {_SU: _OUT_SUBJ, _RO: _OUT_ROW}
+
+# ── 项目配置（按本项目元数据调整）──
+
+CHECK_NAME = "其他选项自由文本核查"
+
+# (formOID, 选项字段 fieldOID) → 配套自由文本字段 fieldOID
+# 用 query_metadata.py fields 查 fieldOID；选「其他」时必填的文本列即配套列
+COMPANION_MAP = {
+    ("DS_ICF",  "DSVER2"):   "DSVEROT",
+    ("DM",      "ETHNIC"):   "ETHNICOT",
+    ("RP",      "RPCAT"):    "RPCATOT",
+    ("MH_SD",   "MHCAT"):    "MHCATOT",
+    ("PR_HPV",  "PRCAT"):    "PRCATOT",
+    ("VS",      "VSCOM"):    "VSDESC",
+    ("PE",      "PECOM"):    "PEDESC",
+    ("EG",      "EGCOM"):    "EGDESC",
+    ("CM",      "CMDOSU"):   "CMDOSUOT",
+    ("CM",      "CMDOSFRQ"): "CMFRQOT",
+    ("CM",      "CMROUTE"):  "CMROUOT",
+    ("CM",      "CMINDC"):   "CMDESC",
+    ("AE",      "AEACNOTH"): "AEACNOT",
+}
+
+# ── 列名 ──
+
+VAR_SUBJ   = _SU       # 读取名（clinflash→受试者编号 / taimei→SUBJID）
+VAR_ROW    = _RO       # 读取名（clinflash→行号 / taimei→RECREP）
+VAR_FORM   = "表单"
+VAR_FIELD  = "字段"
+VAR_VALUE  = "选项值"
+VAR_TEXT   = "自由文本"
+VAR_RESULT = "核查结果"
+# issues 用读取名构造，rename 后输出
+_OUTPUT_COLS_RAW = [VAR_SUBJ, VAR_ROW, VAR_FORM, VAR_FIELD, VAR_VALUE, VAR_TEXT, VAR_RESULT]
+OUTPUT_COLS = [_OUT_SUBJ, _OUT_ROW, VAR_FORM, VAR_FIELD, VAR_VALUE, VAR_TEXT, VAR_RESULT]
+
+# ── 1 读取元数据，构建列名 + 已设选项 ──
+
+_meta_dir = Path(_project_root) / "02 metadata"
+_ff = json.load(open(_meta_dir / "FormField.json", encoding="utf-8"))
+_cl = json.load(open(_meta_dir / "CodeList.json", encoding="utf-8"))
+
+def _col_name(v):
+    item = v.get("itemName", "")
+    oid  = v.get("fieldOID", "")
+    return f"{item}({oid})" if item and oid else item
+
+_field_info = {}
+for v in _ff["variables"]:
+    key = (v["formOID"], v["fieldOID"])
+    if key not in _field_info:
+        _field_info[key] = {
+            "itemName":     v["itemName"],
+            "formName":     v["formName"],
+            "codeListName": v.get("codeList", {}).get("name", ""),
+            "colName":      _col_name(v),
+        }
+
+_forms_with_row = {v["formOID"] for v in _ff["variables"] if v["itemName"] == VAR_ROW}
+
+_form_fields = defaultdict(list)
+for (fid, foid), comp_oid in COMPANION_MAP.items():
+    fi = _field_info.get((fid, foid))
+    ci = _field_info.get((fid, comp_oid))
+    if not fi or not ci:
+        print(f"  跳过 ({fid}, {foid}): 元数据中找不到")
+        continue
+    cl_name = fi["codeListName"]
+    cl_items = _cl.get(cl_name, [])
+    other_vals = [it["displayValue"] for it in cl_items
+                  if "其他" in it["displayValue"] or "其它" in it["displayValue"]]
+    preset = [it["displayValue"] for it in cl_items
+              if "其他" not in it["displayValue"] and "其它" not in it["displayValue"]]
+    _form_fields[fid].append({
+        "fieldOID":     foid,
+        "itemName":     fi["itemName"],
+        "formName":     fi["formName"],
+        "colName":      fi["colName"],
+        "companionCol": ci["colName"],
+        "otherVals":    other_vals,
+        "preset":       preset,
+    })
+
+print(f"待核查表单 {len(_form_fields)} 个，字段对 {sum(len(v) for v in _form_fields.values())} 组")
+
+# ── 2 逐表加载 + 筛选「其他」行 + 核查自由文本 ──
+
+issues = []
+
+for fid, fields in _form_fields.items():
+    usecols = [VAR_SUBJ]
+    if fid in _forms_with_row:
+        usecols.append(VAR_ROW)
+    for f in fields:
+        usecols.append(f["colName"])
+        usecols.append(f["companionCol"])
+    usecols = list(dict.fromkeys(usecols))
+
+    try:
+        df = load_sheet(fid, usecols=usecols)
+    except Exception as e:
+        print(f"  跳过 {fid}: {e}")
+        continue
+
+    has_row = VAR_ROW in df.columns
+
+    for f in fields:
+        col, comp = f["colName"], f["companionCol"]
+        if col not in df.columns or comp not in df.columns:
+            continue
+        other_vals = f["otherVals"]
+        if not other_vals:
+            continue
+
+        mask = df[col].astype(str).apply(lambda x: any(ov in x for ov in other_vals))
+        df_hit = df[mask]
+        if df_hit.empty:
+            continue
+
+        for _, row in df_hit.iterrows():
+            raw_text = row[comp]
+            text_str = str(raw_text).strip() if pd.notna(raw_text) else ""
+            if text_str in ("nan", "None"):
+                text_str = ""
+
+            if not text_str:
+                result = "自由文本为空"
+            elif any(text_str.lower() == p.lower() for p in f["preset"]):
+                result = f"与已设选项重复：{text_str}"
+            else:
+                continue
+
+            issues.append({
+                VAR_SUBJ:   row.get(VAR_SUBJ, ""),
+                VAR_ROW:    row.get(VAR_ROW, "") if has_row else "",
+                VAR_FORM:   f["formName"],
+                VAR_FIELD:  f["itemName"],
+                VAR_VALUE:  row[col],
+                VAR_TEXT:   text_str,
+                VAR_RESULT: result,
+            })
+
+    print(f"  {fid}: 累计 {len(issues)} 条")
+
+# ── 3 格式化 ──
+
+df_out = pd.DataFrame(issues, columns=_OUTPUT_COLS_RAW)
+df_out = df_out.rename(columns=_SYS_RENAME)
+df_out = df_out[OUTPUT_COLS]
+
+# ── 4 输出 ──
+
+n = len(df_out)
+title = CHECK_NAME
+export_to_one_excel_with_format(
+    df_out,
+    f"{output_path}/listing/{title}.xlsx",
+    title,
+    f"{title}（{n}条）",
+    add_title=True,
+)
