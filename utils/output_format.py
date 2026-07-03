@@ -478,7 +478,8 @@ def export_to_excel_with_format(df, output_path, sheet_name, title_name, add_tit
             worksheet.set_column(c, c, min(width + 2, 50))
 
         # 筛选
-        worksheet.autofilter(header_row, 0, data_start_row + num_rows - 1, num_cols - 1)
+        if num_rows > 0:
+            worksheet.autofilter(header_row, 0, data_start_row + num_rows - 1, num_cols - 1)
 
     print(f"Sheet '{sheet_name}' 已成功导出至: {output_path}")
 
