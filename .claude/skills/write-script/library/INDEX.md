@@ -10,6 +10,7 @@
 | `incomplete_date_check.py` | 扫描所有日期/时间字段找 UK/UNK 不完整录入，拆部件并生成质疑说明 | 日期,时间,UK,UNK,不完整,部分日期,元数据驱动 | 高 | DATE_FORMATS, TIME_FORMATS |
 | `other_option_text_check.py` | 「其他」选项的自由文本是否为空或与预设选项重复 | 其他,自由文本,hasOther,编码表,companion | 高 | COMPANION_MAP |
 | `dynamic_link_check.py` | 动态链接字段解析后核对行号/名称/日期一致性（关联空行、关联未更新） | 动态链接,关联,行号解析,AE,MH,名称一致,日期一致 | 高 | LINK_CONFIGS |
+| `linked_form_consistency_check.py` | 主表筛选类型后核查关联表是否有对应记录，输出全量+异常标记（如 AE 药物治疗应有 CM 记录） | 关联行号,一致性,交叉表,CM,AE,过滤,异常标记,全量输出 | 高 | MAIN_FORM/MAIN_FILTER_COL/MAIN_FILTER_INCLUDE/MAIN_FILTER_EXCLUDE, LINK_FORM/LINK_COL/LINK_REASON_*, OUTPUT_COLS |
 
 ## 检索约定
 

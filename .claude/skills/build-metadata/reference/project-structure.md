@@ -10,7 +10,7 @@
 ├── 01 rawdata/                  # 原始数据（不入 Git）
 ├── 02 metadata/                 # EDC 元数据 Excel + build-metadata 生成的 JSON
 ├── 03 output/                   # 生成的报表（不入 Git）
-├── 04 scripts/                  # 分析代码（按章节拆分，子目录由报告章节决定）
+├── 04 scripts/                  # 分析代码（平放，不分子文件夹）
 ├── .claude/                     # Claude Code 配置（不随项目变动）
 │   ├── hooks/                     # Claude Code 兼容钩子（opencode 不生效，保留兼容）
 │   │   ├── raw_read_guard.py    # PreToolUse: 禁止直接读 rawdata（Claude Code only）
@@ -99,7 +99,7 @@ Thumbs.db
 
 ## Directory Structure
 \```
-├── 04 scripts/            # 分析代码（按章节拆分）
+├── 04 scripts/            # 分析代码（平放，不分子文件夹）
 ├── utils/              # 公共工具函数
 │   ├── loaders.py      # 数据读取层（load_sheet / load_rand 等）
 │   └── output_format.py # 报表输出函数（三线表、xlsx 等）
@@ -128,6 +128,11 @@ Thumbs.db
 - 生成文件路径由 `config.yaml` 的 `output_path` 控制（`config.py` 自动解析为绝对路径）
 - 虚拟环境位于 `.venv/`，安装依赖：`pip install -r requirements.txt`
 - 所有脚本遵循统一的编码模式（八步操作模型），读取 1 个范例即可了解全貌，无需遍历所有脚本
+- 所有脚本平放在 `04 scripts/` 目录，不分子文件夹
+- 脚本命名：`清单NN-标题.py`（NN 为两位数字序号，`-` 分隔，无全角冒号）
+- 输出 xlsx 与脚本同名（`清单NN-标题.xlsx`），位于 `{output_path}/listing/`
+- 写新脚本前：查询元数据 → 用 Markdown 表格呈现方案（表单+字段+输出列）→ 等用户确认后再写代码，不直接动手
+- 写脚本前 / 排查字段取值时，先通过 `.claude/skills/write-script/scripts/query_metadata.py` 查看数据形状（`value_counts()` / `unique()` / `describe()`），不允许以任何形式直接读取原始数据文件
 ```
 
 ### `config.py`
