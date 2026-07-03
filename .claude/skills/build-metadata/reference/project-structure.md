@@ -127,6 +127,7 @@ Thumbs.db
 - 数据读取函数来自 `utils/loaders.py`（`load_sheet` / `load_rand` 等）
 - 生成文件路径由 `config.yaml` 的 `output_path` 控制（`config.py` 自动解析为绝对路径）
 - 虚拟环境位于 `.venv/`，安装依赖：`pip install -r requirements.txt`
+- 所有脚本遵循统一的编码模式（八步操作模型），读取 1 个范例即可了解全貌，无需遍历所有脚本
 ```
 
 ### `config.py`
