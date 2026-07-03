@@ -199,6 +199,10 @@ export_to_one_excel_with_format(
 
 - 文件路径用 f-string 拼接 `output_path`，不硬编码绝对路径
 - 表格输出到 `output_path/table/`，清单输出到 `output_path/listing/`
+- **docx 三线表命名**：`表格NN-标题.docx`，如 `表格01-知情同意书签署日期汇总.docx`
+- **xlsx 清单命名**：`清单NN-标题.xlsx`，如 `清单01-筛选号与知情同意书签署日期矛盾核查.xlsx`
+- NN 为两位数字序号，按脚本在章节内的编号递增
+- **Excel sheet name 禁止使用全角冒号 `：`**，否则 Excel 打开时触发修复提示。用 `-` 替代
 
 ## 禁止事项
 
