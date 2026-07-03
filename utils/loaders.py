@@ -18,6 +18,81 @@ with open(_meta_path, encoding="utf-8") as _f:
 EDC_TYPE = _meta.get("_meta", {}).get("edcType", "")
 
 
+# ── 系统列注册表 ──
+# 同一 EDC 系统的 rawdata 系统列跨研究固定，故作确定性知识登记于此。
+# 模板/脚本通过 system_cols() 取值，函数体不硬编码系统列名。
+# 新增 EDC 类型时在此补一行即可。
+#
+# 6 个角色可完全定位 EDC 中的每一个数据点：
+#   center      中心编号
+#   subject     筛选号
+#   visit_name  访视名称
+#   visit_seq   访视序号（标记访视重复）
+#   form_name   表单名称
+#   row         字段行号（标记表单内重复记录）
+SYSTEM_COLUMNS: dict[str, dict[str, str]] = {
+    "clinflash": {
+        "center":     "试验中心编号",
+        "subject":    "受试者编号",
+        "visit_name": "数据节",
+        "visit_seq":  "Instance顺序号",
+        "form_name":  "数据页",
+        "row":        "行号",
+    },
+    "taimei5": {
+        "center":     "SITEID",
+        "subject":    "SUBJID",
+        "visit_name": "VISIT",
+        "visit_seq":  "VISTREP",
+        "form_name":  "FORMNM",
+        "row":        "RECREP",
+    },
+    "taimei6": {
+        "center":     "SITEID",
+        "subject":    "SUBJID",
+        "visit_name": "VISIT",
+        "visit_seq":  "VISTREP",
+        "form_name":  "FORMNM",
+        "row":        "RECREP",
+    },
+    "cmis": {
+        "center":     "SITEID",
+        "subject":    "SUBJID",
+        "visit_name": "VISIT",
+        "visit_seq":  "VISITNUM",
+        "form_name":  "FORMNAME",
+        "row":        "TOPICSEQ",
+    },
+}
+
+
+def system_cols(role: str | None = None) -> dict | str:
+    """返回当前 EDC 类型的系统列名。
+
+    Args:
+        role: 指定角色（center/subject/visit_name/visit_seq/form_name/row）
+              则返回对应列名；省略则返回整 dict。
+
+    Raises:
+        ValueError: 当前 EDC 类型未登记，或已登记但缺少请求的角色——
+                    提示在 SYSTEM_COLUMNS 中补全。
+    """
+    cols = SYSTEM_COLUMNS.get(EDC_TYPE)
+    if cols is None:
+        raise ValueError(
+            f"EDC 类型 '{EDC_TYPE}' 未在 utils/loaders.py 的 SYSTEM_COLUMNS 登记，"
+            f"请补全该 EDC 的系统列名（center/subject/visit_name/visit_seq/form_name/row）。"
+        )
+    if role is None:
+        return cols
+    if role not in cols:
+        raise ValueError(
+            f"EDC '{EDC_TYPE}' 未登记系统列角色 '{role}'，"
+            f"请在 utils/loaders.py 的 SYSTEM_COLUMNS['{EDC_TYPE}'] 补全。"
+        )
+    return cols[role]
+
+
 def _resolve_sheet_name(form_oid: str, form_name: str | None = None) -> str:
     """根据 EDC 类型构造实际 sheet 名称。
 
