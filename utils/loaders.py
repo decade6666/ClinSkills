@@ -140,12 +140,14 @@ def load_rand(cols: list[str] | None = None) -> pd.DataFrame:
     """读取随机入组表（DS_RAND），返回受试者+随机号等。
 
     Args:
-        cols: 指定读取的列名列表，默认 ["受试者", "随机号"]
+        cols: 指定读取的列名列表。受试者列由 system_cols("subject") 自动解析；
+              表单字段列（如"随机号"）为 clinflash 列名，其他 EDC 项目需通过
+              cols 传入对应的表单字段列名。
 
     Returns:
         DataFrame
     """
-    default_cols = ["受试者", "随机号"]
+    default_cols = [system_cols("subject"), "随机号"]
     usecols = cols or default_cols
     return load_sheet("DS_RAND", usecols=usecols)
 
@@ -154,12 +156,14 @@ def load_completion(cols: list[str] | None = None) -> pd.DataFrame:
     """读取试验总结表（DS_END），返回受试者+完成状态等。
 
     Args:
-        cols: 指定读取的列名列表，默认 ["受试者", "受试者是否完成试验_TXT"]
+        cols: 指定读取的列名列表。受试者列由 system_cols("subject") 自动解析；
+              表单字段列（如"受试者是否完成试验_TXT"）为 clinflash 列名，
+              其他 EDC 项目需通过 cols 传入对应的表单字段列名。
 
     Returns:
         DataFrame
     """
-    default_cols = ["受试者", "受试者是否完成试验_TXT"]
+    default_cols = [system_cols("subject"), "受试者是否完成试验_TXT"]
     usecols = cols or default_cols
     return load_sheet("DS_END", usecols=usecols)
 
@@ -167,11 +171,21 @@ def load_completion(cols: list[str] | None = None) -> pd.DataFrame:
 def load_first_dose(cols: list[str] | None = None) -> pd.DataFrame:
     """读取试验药物首次用药日期（EC_ED 最早开始日期）。
 
+    Args:
+        cols: 指定读取的列名列表，格式必须为 [受试者列, 开始日期列]（顺序固定）。
+              受试者列由 system_cols("subject") 自动解析；开始日期列为 clinflash
+              列名"开始日期"，其他 EDC 项目需通过 cols 传入对应的表单字段列名。
+
     Returns:
         DataFrame with columns [受试者, 首次用药日期]
     """
-    df = load_sheet("EC_ED", usecols=["受试者", "开始日期"])
-    df["开始日期"] = pd.to_datetime(df["开始日期"], errors="coerce")
-    df = df.groupby("受试者", dropna=False)["开始日期"].min().reset_index()
-    df = df.rename(columns={"开始日期": "首次用药日期"})
+    subj_col = system_cols("subject")
+    default_cols = [subj_col, "开始日期"]
+    usecols = cols or default_cols
+    assert len(usecols) == 2, "cols 必须恰好包含 2 个元素：[受试者列, 开始日期列]"
+    start_date_col = usecols[1]  # 约定：cols[0]=受试者列，cols[1]=日期列
+    df = load_sheet("EC_ED", usecols=usecols)
+    df[start_date_col] = pd.to_datetime(df[start_date_col], errors="coerce")
+    df = df.groupby(subj_col, dropna=False)[start_date_col].min().reset_index()
+    df = df.rename(columns={start_date_col: "首次用药日期"})
     return df

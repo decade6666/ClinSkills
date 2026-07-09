@@ -12,11 +12,12 @@
 ├── 03 output/                   # 生成的报表（不入 Git）
 ├── 04 scripts/                  # 分析代码（平放，不分子文件夹）
 ├── .claude/                     # Claude Code 配置（不随项目变动）
-│   ├── hooks/                     # Claude Code 兼容钩子（opencode 不生效，保留兼容）
+│   ├── agents/                    # 自定义 Agent 定义（metadata-explorer / python-reviewer）
+│   ├── hooks/                     # Claude Code PreToolUse/PostToolUse 钩子
 │   │   ├── raw_read_guard.py    # PreToolUse: 禁止直接读 rawdata（Claude Code only）
 │   │   └── syntax_check.py      # PostToolUse: 脚本语法检查（Claude Code only）
 │   ├── rules/
-│   │   └── constraints.md       # 强制约束（含 opencode 环境说明）
+│   │   └── constraints.md       # 强制约束
 │   ├── settings.json            # 权限配置（permission deny 保护 rawdata；无 hooks）
 │   └── skills/
 │       ├── build-metadata/      # 元数据解析技能
@@ -91,49 +92,14 @@ Thumbs.db
 
 ### `CLAUDE.md`
 
-```markdown
-# Project: <项目名>数据审核报告
+模板内容维护在独立文件，初始化时直接读取：
 
-## Overview
-临床试验数据审核报告项目。通过 Python + pandas 处理 EDC 导出的 Excel 数据，生成 .docx/.xlsx 报表。
-
-## Directory Structure
-\```
-├── 04 scripts/            # 分析代码（平放，不分子文件夹）
-├── utils/              # 公共工具函数
-│   ├── loaders.py      # 数据读取层（load_sheet / load_rand 等）
-│   └── output_format.py # 报表输出函数（三线表、xlsx 等）
-├── 02 metadata/         # EDC 元数据 Excel + build-metadata 生成的 JSON
-├── 01 rawdata/          # 原始数据（不入 Git）
-└── 03 output/           # 生成的报表（不入 Git）
-\```
-
-## Permissions
-- 可编辑：`04 scripts/`、`utils/`、`config.py`、`config.yaml`、`.gitignore`、`CLAUDE.md`、`.claude/**`
-- 不在 Git 中：`01 rawdata/`、`02 metadata/`、`03 output/`、`04 scripts/`
-
-## Conventions
-
-编码规范（变量前缀、列名集中管理、八步操作模型、脚本模板等）详见 `/write-script` skill 的 `SKILL.md`。以下为跨 skill 的通用约定：
-
-<!-- EDC_TYPE_HEADER_START -->
-<!-- 根据 Step 1 选择的 EDC 类型，替换下方约定行： -->
-<!-- clinflash: - 表头结构：`header=0`（单行中文列名，无 skiprows） -->
-<!-- taimei5/taimei6/cmis: - 表头结构：`header=0, skiprows=[1]`（第 1 行英文 SAS 列名，第 2 行中文列名被跳过） -->
-- 表头结构：`header=0`（单行中文列名，无 skiprows）
-<!-- EDC_TYPE_HEADER_END -->
-- 列名语言：按 `CLAUDE.md` 表头约定执行（clinflash 用中文列名，taimei/cmis 用英文 SAS 列名）
-- 报表函数来自 `utils/output_format.py`
-- 数据读取函数来自 `utils/loaders.py`（`load_sheet` / `load_rand` 等）
-- 生成文件路径由 `config.yaml` 的 `output_path` 控制（`config.py` 自动解析为绝对路径）
-- 虚拟环境位于 `.venv/`，安装依赖：`pip install -r requirements.txt`
-- 所有脚本遵循统一的编码模式（八步操作模型），读取 1 个范例即可了解全貌，无需遍历所有脚本
-- 所有脚本平放在 `04 scripts/` 目录，不分子文件夹
-- 脚本命名：`清单NN-标题.py`（NN 为两位数字序号，`-` 分隔，无全角冒号）
-- 输出 xlsx 与脚本同名（`清单NN-标题.xlsx`），位于 `{output_path}/listing/`
-- 写新脚本前：查询元数据 → 用 Markdown 表格呈现方案（表单+字段+输出列）→ 等用户确认后再写代码，不直接动手
-- 写脚本前 / 排查字段取值时，先通过 `.claude/skills/write-script/scripts/query_metadata.py` 查看数据形状（`value_counts()` / `unique()` / `describe()`），不允许以任何形式直接读取原始数据文件
 ```
+.claude/skills/build-metadata/reference/CLAUDE.md.template
+```
+
+模板包含 Overview、Directory Structure、Permissions、Conventions（含 EDC 类型表头占位注释）、Agent 清单。
+`build-metadata` Step 2b 读取此文件后，根据 Step 1 确定的 EDC 类型替换 `<!-- EDC_TYPE_HEADER_START/END -->` 区块内的表头约定行，再写入项目根目录的 `CLAUDE.md`。
 
 ### `config.py`
 
@@ -195,7 +161,7 @@ XlsxWriter>=3.1
 | `config.yaml` | `raw_path` / `pd_path` / `code_path` / `remark_path` / `timewin_path` / `output_path` |
 | `CLAUDE.md` | 目录树、Permissions 节 |
 | `.claude/settings.json` | permission deny / allow 规则 |
-| `.claude/rules/constraints.md` | `scripts/` 引用 + opencode 环境说明 |
+| `.claude/rules/constraints.md` | 强制约束（rawdata 保护、验证规则） |
 | `.claude/hooks/syntax_check.py` | `parts[0]` 检查 + docstring（Claude Code 兼容） |
 | `.claude/hooks/raw_read_guard.py` | `_under_dir()` 参数 + docstring（Claude Code 兼容） |
 | `.claude/skills/write-script/SKILL.md` | 验证命令路径 |

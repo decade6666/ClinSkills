@@ -2,6 +2,10 @@
 
 本文件是 write-script skill 的编码参考。SKILL.md 在"编写脚本"步骤中引用本文件。
 
+> **维护说明**：`review-checklist.md` 是本文件的「可机器执行」检查表版本（供 `python-reviewer` Agent 使用）。
+> 修改本文件中的任何规则后，**必须同步更新 `review-checklist.md`**；反之亦然。
+> 文件路径：`.claude/skills/write-script/reference/review-checklist.md`
+
 ---
 
 ## 文件头：路径引导 + 导入

@@ -86,18 +86,25 @@ Read ${CLAUDE_PROJECT_DIR}/.claude/skills/build-metadata/reference/project-struc
 
 **2b. 初始化骨架文件**
 
-检查以下文件是否已存在，不存在则从参考文件中的模板生成。**CLAUDE.md 的表头约定行根据 Step 1 确定的 EDC 类型选择对应内容**：
+检查以下文件是否已存在，不存在则按下表生成。已存在的文件**不覆盖**，仅补充缺失项。
 
-| 文件 | 说明 |
-|------|------|
-| `.gitattributes` | Git 行尾与二进制规则 |
-| `.gitignore` | Git 忽略规则 |
-| `CLAUDE.md` | 项目说明（含 EDC 类型对应的表头约定，提示用户填写 `<项目名>`） |
-| `config.py` | 路径配置加载器 |
-| `config.yaml` | 数据路径模板（提示用户后续填写具体路径） |
-| `requirements.txt` | Python 依赖 |
+| 文件 | 来源 | 说明 |
+|------|------|------|
+| `.gitattributes` | `project-structure.md` 中的模板块 | Git 行尾与二进制规则 |
+| `.gitignore` | `project-structure.md` 中的模板块 | Git 忽略规则 |
+| `CLAUDE.md` | `Read .claude/skills/build-metadata/reference/CLAUDE.md.template` | 读取后将 `<!-- EDC_TYPE_HEADER_START -->` 到 `<!-- EDC_TYPE_HEADER_END -->` 区块替换为 Step 1 对应的表头约定行，再写入；提示用户填写 `<项目名>` |
+| `config.py` | `project-structure.md` 中的模板块 | 路径配置加载器 |
+| `config.yaml` | `project-structure.md` 中的模板块 | 数据路径模板（提示用户后续填写具体路径） |
+| `requirements.txt` | `project-structure.md` 中的模板块 | Python 依赖 |
 
-已存在的文件**不覆盖**，仅补充缺失项。
+**CLAUDE.md EDC 类型替换规则：**
+
+| EDC 类型 | 替换后的表头约定行 |
+|---|---|
+| clinflash | `- 表头结构：\`header=0\`（单行中文列名，无 skiprows）` |
+| taimei5 / taimei6 / cmis | `- 表头结构：\`header=0, skiprows=[1]\`（第 1 行英文 SAS 列名，第 2 行中文列名被跳过）` |
+
+替换范围：删除 `<!-- EDC_TYPE_HEADER_START -->` 至 `<!-- EDC_TYPE_HEADER_END -->` 之间的全部行（含注释行和默认占位行），插入对应约定行。
 
 **2c. 报告校验结果**
 
