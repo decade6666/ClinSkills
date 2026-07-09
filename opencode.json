@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "permissions": {
+    "deny": [
+      "read:01 rawdata/**",
+      "edit:**/*.ipynb",
+      "write:**/*.ipynb",
+      "notebook:**/*.ipynb"
+    ],
+    "allow": [
+      "read:**",
+      "glob:**",
+      "grep:**",
+      "edit:04 scripts/**",
+      "edit:utils/**",
+      "edit:config.py",
+      "edit:config.yaml",
+      "edit:.gitignore",
+      "edit:CLAUDE.md",
+      "edit:AGENTS.md",
+      "edit:.claude/**",
+      "edit:.opencode/**",
+      "write:04 scripts/**",
+      "write:utils/**",
+      "bash:python 04 scripts/**",
+      "bash:python \"04 scripts/**\"",
+      "bash:python .claude/skills/**",
+      "bash:pip install *",
+      "bash:git *"
+    ]
+  },
+  "instructions": "AGENTS.md"
+}
