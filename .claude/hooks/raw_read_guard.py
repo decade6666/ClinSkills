@@ -7,7 +7,8 @@
 判定：
 - 02 metadata/ 下的表格文件 → 显式放行（无需弹窗）
 - 01 rawdata/ 下的表格文件 → 硬拒绝（禁止直接读取，引导使用 query_metadata.py）
-- Bash 命令中出现 raw 读取特征 → 硬拒绝（排除 04 scripts/ 脚本和 query_metadata.py）
+- Bash 命令中出现 raw 读取特征 → 硬拒绝（排除 04 scripts/ 脚本、query_metadata.py，
+  以及带 nrows≤2 行数上限的兜底读取——见 constraints #2）
 """
 
 import json
@@ -29,6 +30,8 @@ _DATA_SUFFIXES = {".xlsx", ".xls", ".csv"}
 _RAW_READ_RE = re.compile(r"read_excel|load_workbook|ExcelFile|openpyxl|raw_path")
 _RAW_PATH_RE = re.compile(r"""(?:raw[/\\]|rawdata[/\\]|01\s+rawdata[/\\])[^"'\s]*\.(?:xlsx|xls|csv)""", re.IGNORECASE)
 _RUN_SCRIPT_RE = re.compile(r"""python[\w.]*\s+["']?(?:04\s+)?scripts[/\\]""")
+# constraints #2 兜底：带行数上限（nrows≤2，含表头≤3 行）的受控读取属例外，放行
+_BOUNDED_NROWS_RE = re.compile(r"nrows\s*=\s*[012]\b")
 
 _DENY_RAW_REASON = (
     "严禁直接读取 raw 原始数据。按项目约定（constraints.md #2）应先用 "
@@ -94,6 +97,8 @@ def main():
         cmd = tool_input.get("command") or ""
         if "query_metadata.py" in cmd or _RUN_SCRIPT_RE.search(cmd):
             return 0  # 元数据工具 / scripts 下真实脚本，放行
+        if _BOUNDED_NROWS_RE.search(cmd):
+            return 0  # 兜底：带 nrows≤2 行数上限的受控读取（constraints #2），放行
         if _RAW_READ_RE.search(cmd) or _RAW_PATH_RE.search(cmd):
             return _decide("deny", _DENY_RAW_REASON)
         return 0
