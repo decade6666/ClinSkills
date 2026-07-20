@@ -10,7 +10,7 @@ import sys, json
 from pathlib import Path
 from collections import defaultdict
 
-_project_root = str(Path(__file__).resolve().parent.parent)
+_project_root = str(Path(__file__).resolve().parent.parent.parent)
 if _project_root not in sys.path:
     sys.path.insert(0, _project_root)
 
@@ -86,8 +86,6 @@ for v in _ff["variables"]:
             "colName":      _col_name(v),
         }
 
-_forms_with_row = {v["formOID"] for v in _ff["variables"] if v["itemName"] == VAR_ROW}
-
 _form_fields = defaultdict(list)
 for (fid, foid), comp_oid in COMPANION_MAP.items():
     fi = _field_info.get((fid, foid))
@@ -118,9 +116,8 @@ print(f"待核查表单 {len(_form_fields)} 个，字段对 {sum(len(v) for v in
 issues = []
 
 for fid, fields in _form_fields.items():
-    usecols = [VAR_SUBJ]
-    if fid in _forms_with_row:
-        usecols.append(VAR_ROW)
+    # 行号为系统列，rawdata 普遍存在（不在 FormField 元数据里，故不能靠元数据判断有无）
+    usecols = [VAR_SUBJ, VAR_ROW]
     for f in fields:
         usecols.append(f["colName"])
         usecols.append(f["companionCol"])
@@ -128,9 +125,14 @@ for fid, fields in _form_fields.items():
 
     try:
         df = load_sheet(fid, usecols=usecols)
-    except Exception as e:
-        print(f"  跳过 {fid}: {e}")
-        continue
+    except Exception:
+        # 个别无行号列的表：回退为不含行号
+        usecols = [c for c in usecols if c != VAR_ROW]
+        try:
+            df = load_sheet(fid, usecols=usecols)
+        except Exception as e:
+            print(f"  跳过 {fid}: {e}")
+            continue
 
     has_row = VAR_ROW in df.columns
 

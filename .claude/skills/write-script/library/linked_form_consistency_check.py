@@ -15,12 +15,11 @@ import sys, re
 from pathlib import Path
 from datetime import date
 
-_project_root = str(Path(__file__).resolve().parent.parent)
+_project_root = str(Path(__file__).resolve().parent.parent.parent)
 if _project_root not in sys.path:
     sys.path.insert(0, _project_root)
 
 import pandas as pd
-import numpy as np
 from config import output_path
 from utils.output_format import export_to_one_excel_with_format
 from utils.loaders import load_sheet, system_cols
@@ -87,7 +86,7 @@ OUTPUT_COLS = [c for c in [
     MAIN_ENDAT,
     MAIN_OUTCOME,
     MAIN_FILTER_COL,
-    LINK_COL + "_cm",
+    "关联记录行号",
     LINK_STDAT,
     LINK_ENDAT,
     LINK_ONGO,
@@ -122,7 +121,7 @@ print(f"{LINK_FORM} 筛选后记录数: {len(df_link)}")
 
 # ── 5 派生：解析关联字段中的行号 ──
 
-_LINK_PAT = re.compile(r"AE\s+\((\d+)\)")
+_LINK_PAT = re.compile(rf"{re.escape(MAIN_FORM)}\s+\((\d+)\)")  # 引用前缀随 MAIN_FORM（原硬编码 "AE"）
 
 def parse_linked_rows(s):
     if not s or s in ("nan", "None", ""):
@@ -168,7 +167,7 @@ for _, row in df.iterrows():
             MAIN_ENDAT:      main_endat,
             MAIN_OUTCOME:    main_outcome,
             MAIN_FILTER_COL: filter_val,
-            LINK_COL + "_cm": "",
+            "关联记录行号": "",
             LINK_STDAT:      "",
             LINK_ENDAT:      "",
             LINK_ONGO:       "",
@@ -193,7 +192,7 @@ for _, row in df.iterrows():
             MAIN_ENDAT:      main_endat,
             MAIN_OUTCOME:    main_outcome,
             MAIN_FILTER_COL: filter_val,
-            LINK_COL + "_cm": link_line,
+            "关联记录行号": link_line,
             LINK_STDAT:      link_stdat,
             LINK_ENDAT:      link_endat,
             LINK_ONGO:       link_ongo,
@@ -209,7 +208,7 @@ for _, row in df.iterrows():
             MAIN_ENDAT:      main_endat,
             MAIN_OUTCOME:    main_outcome,
             MAIN_FILTER_COL: filter_val,
-            LINK_COL + "_cm": link_line,
+            "关联记录行号": link_line,
             LINK_STDAT:      link_stdat,
             LINK_ENDAT:      link_endat,
             LINK_ONGO:       link_ongo,

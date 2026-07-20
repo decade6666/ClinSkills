@@ -4,12 +4,12 @@
 #       拆出年/月/日/时/分部件，描述缺失类型并生成质疑说明。
 #       完全元数据驱动——跨项目只需核对 DATE_FORMATS / TIME_FORMATS 取值。
 # @tags 日期,时间,UK,UNK,不完整,部分日期,元数据驱动
-# @config DATE_FORMATS, TIME_FORMATS, SYSTEM_COLS
+# @config DATE_FORMATS, TIME_FORMATS
 
 import sys, os, json, re
 from pathlib import Path
 
-_project_root = str(Path(__file__).resolve().parent.parent)
+_project_root = str(Path(__file__).resolve().parent.parent.parent)
 if _project_root not in sys.path:
     sys.path.insert(0, _project_root)
 
