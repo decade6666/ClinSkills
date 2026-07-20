@@ -31,7 +31,7 @@ from utils.loaders import load_sheet
 
 ## 系统列（6 个定位角色）
 
-EDC 导出的 rawdata 中，系统列不在 FormField 元数据里，列名随 EDC 类型而变、连语言都可能不同（clinflash / taimei5 / taimei6 为中文列名，cmis 为英文 SAS 名；均以 `SYSTEM_COLUMNS` 注册表为准）。**禁止在脚本主体硬编码系统列字面量**——一律经 `utils.loaders.system_cols()` 取值。
+EDC 导出的 rawdata 中，系统列不在 FormField 元数据里，列名随 EDC 类型而变——有的用**字段标签**（描述，语言随项目，常见中文也可能英文），有的用 **SAS 变量名**（缩写）：clinflash / taimei5 / taimei6 用字段标签，cmis 用 SAS 变量名；均以 `SYSTEM_COLUMNS` 注册表为准。**禁止在脚本主体硬编码系统列字面量**——一律经 `utils.loaders.system_cols()` 取值。
 
 6 个角色可完全定位 EDC 中的每一个数据点，同一 EDC 跨研究固定：
 
@@ -44,7 +44,7 @@ EDC 导出的 rawdata 中，系统列不在 FormField 元数据里，列名随 E
 | `form_name` | 表单名称 | 数据页 | 页面名称 | 表单名称 | FORMNAME |
 | `row` | 字段行号 | 行号 | 记录号 | 字段记录号 | TOPICSEQ |
 
-> taimei5 / taimei6 列名均已按实际导出核实（第 1 行中文、第 2 行英文被跳过）；两者同属太美、表头结构一致，但中文列名不完全相同（如 subject：taimei5 `受试者` / taimei6 `受试者编号`；visit_name：taimei5 `访视名称` / taimei6 `表单集名称`），一律以 `SYSTEM_COLUMNS` 注册表为准。
+> taimei5 / taimei6 列名均已按实际导出核实（第 1 行字段标签、第 2 行 SAS 变量名被跳过）；两者同属太美、表头结构一致，但字段标签不完全相同（如 subject：taimei5 `受试者` / taimei6 `受试者编号`；visit_name：taimei5 `访视名称` / taimei6 `表单集名称`），一律以 `SYSTEM_COLUMNS` 注册表为准。
 > **同步约定**：本表是 `utils/loaders.py` 的 `SYSTEM_COLUMNS` 的文档副本，权威以注册表为准；改动任一处（增删 EDC / 改列名）必须同步另一处。
 
 ```python
@@ -61,21 +61,21 @@ VAR_VISIT   = system_cols("visit_name")
 
 导入之后、逻辑之前，用 `# ── 列名集中管理 ──` 引出声明区：
 
-**列名语言规则：列名语言由 `CLAUDE.md` 的表头约定决定（clinflash/taimei5/taimei6 用中文列名，cmis 用英文 SAS 列名）。`IMPORT_*`（EDC 导出的实际列名）与中间 `VAR_*` 全程与 CLAUDE.md 约定一致；只有最终输出结果表的列名（输出 `VAR_*` + `OUTPUT_COLS`）必须 rename 还原为中文。即「内部按约定、输出中文」。**
+**列名类型规则：脚本读取用「字段标签」还是「SAS 变量名」，由 `CLAUDE.md` 的表头约定决定（clinflash/taimei5/taimei6 用字段标签，cmis 用 SAS 变量名）；标签语言随项目（中文或英文）。`IMPORT_*`（EDC 导出的实际列名）与中间 `VAR_*` 全程与之一致；只有最终输出结果表的列名（输出 `VAR_*` + `OUTPUT_COLS`）必须 rename 为中文报表表头。即「内部按 EDC 实际列名、输出中文」。**
 
-> **clinflash 示例**（中文列名）：`IMPORT_SV = ["受试者编号", "访视日期(VISDAT)"]`，`VAR_SUBJ = "受试者编号"`
-> **cmis 示例**（英文列名）：`IMPORT_SV = ["SUBJID", "VISDAT"]`，`VAR_SUBJ = "SUBJID"`
+> **clinflash 示例**（字段标签）：`IMPORT_SV = ["受试者编号", "访视日期(VISDAT)"]`，`VAR_SUBJ = "受试者编号"`
+> **cmis 示例**（SAS 变量名）：`IMPORT_SV = ["SUBJID", "VISDAT"]`，`VAR_SUBJ = "SUBJID"`
 
 ```python
 # ── 列名集中管理 ──
 
-# 导入列名（load_sheet 的 usecols）—— 按 CLAUDE.md 约定（clinflash/taimei5/taimei6 中文 / cmis 英文）
+# 导入列名（load_sheet 的 usecols）—— 按 CLAUDE.md 约定（clinflash/taimei5/taimei6 用字段标签 / cmis 用 SAS 名）
 # clinflash: IMPORT_SV  = ["受试者编号", "访视日期(VISDAT)"]
 # cmis:     IMPORT_SV  = ["SUBJID", "VISDAT"]
 IMPORT_SV  = ["受试者编号", "访视日期(VISDAT)"]
 IMPORT_ICF = ["受试者编号", "知情同意书签署日期(DSSTDAT)"]
 
-# 中间列名（归一化 / 筛选 / 派生阶段产生或引用）—— 与 IMPORT 同语言
+# 中间列名（归一化 / 筛选 / 派生阶段产生或引用）—— 与 IMPORT 同类型（标签或 SAS 名）
 VAR_SUBJ          = "受试者编号"
 VAR_ICF_SIGN_DATE = "知情同意书签署日期(DSSTDAT)"
 
@@ -86,9 +86,9 @@ OUTPUT_COLS = [VAR_SCREEN_NO, VAR_STUDY_START]
 ```
 
 **三区职责边界：**
-- `IMPORT_*`（英文）：只出现在 `load_sheet` / `load_rand` 的 `cols` 参数中
-- `VAR_*`（中间，英文）：出现在归一化、筛选、派生、连接步骤的逻辑中
-- `VAR_*`（输出，中文）+ `OUTPUT_COLS`：只出现在 rename 映射和最终选列中；输出表禁止保留英文列名
+- `IMPORT_*`（EDC 实际列名：标签或 SAS 名）：只出现在 `load_sheet` / `load_rand` 的 `cols` 参数中
+- `VAR_*`（中间，与 IMPORT 同）：出现在归一化、筛选、派生、连接步骤的逻辑中
+- `VAR_*`（输出，中文）+ `OUTPUT_COLS`：只出现在 rename 映射和最终选列中；输出表禁止保留 SAS 名或英文列名
 
 ## 编码字段与解码后缀
 
