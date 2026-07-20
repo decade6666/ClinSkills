@@ -45,6 +45,7 @@ EDC 导出的 rawdata 中，系统列不在 FormField 元数据里，列名随 E
 | `row` | 字段行号 | 行号 | 记录号 | 字段记录号 | TOPICSEQ |
 
 > taimei5 / taimei6 列名均已按实际导出核实（第 1 行中文、第 2 行英文被跳过）；两者同属太美、表头结构一致，但中文列名不完全相同（如 subject：taimei5 `受试者` / taimei6 `受试者编号`；visit_name：taimei5 `访视名称` / taimei6 `表单集名称`），一律以 `SYSTEM_COLUMNS` 注册表为准。
+> **同步约定**：本表是 `utils/loaders.py` 的 `SYSTEM_COLUMNS` 的文档副本，权威以注册表为准；改动任一处（增删 EDC / 改列名）必须同步另一处。
 
 ```python
 from utils.loaders import load_sheet, system_cols
