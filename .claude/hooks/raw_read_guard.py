@@ -32,6 +32,8 @@ _RAW_PATH_RE = re.compile(r"""(?:raw[/\\]|rawdata[/\\]|01\s+rawdata[/\\])[^"'\s]
 _RUN_SCRIPT_RE = re.compile(r"""python[\w.]*\s+["']?(?:04\s+)?scripts[/\\]""")
 # constraints #2 兜底：带行数上限（nrows≤2，含表头≤3 行）的受控读取属例外，放行
 _BOUNDED_NROWS_RE = re.compile(r"nrows\s*=\s*[012]\b")
+# 读取调用计数（用于判定"命令中每个读取都带 nrows 上限"，防止混入无界读绕过）
+_READ_CALL_RE = re.compile(r"read_excel|load_workbook|ExcelFile")
 
 _DENY_RAW_REASON = (
     "严禁直接读取 raw 原始数据。按项目约定（constraints.md #2）应先用 "
@@ -97,8 +99,9 @@ def main():
         cmd = tool_input.get("command") or ""
         if "query_metadata.py" in cmd or _RUN_SCRIPT_RE.search(cmd):
             return 0  # 元数据工具 / scripts 下真实脚本，放行
-        if _BOUNDED_NROWS_RE.search(cmd):
-            return 0  # 兜底：带 nrows≤2 行数上限的受控读取（constraints #2），放行
+        if _BOUNDED_NROWS_RE.search(cmd) and \
+                len(_READ_CALL_RE.findall(cmd)) <= len(_BOUNDED_NROWS_RE.findall(cmd)):
+            return 0  # 兜底：命令中每个读取都带 nrows≤2 上限（constraints #2），放行
         if _RAW_READ_RE.search(cmd) or _RAW_PATH_RE.search(cmd):
             return _decide("deny", _DENY_RAW_REASON)
         return 0
