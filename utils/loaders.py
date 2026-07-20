@@ -31,6 +31,7 @@ EDC_TYPE = _meta.get("_meta", {}).get("edcType", "")
 # 同一 EDC 系统的 rawdata 系统列跨研究固定，故作确定性知识登记于此。
 # 模板/脚本通过 system_cols() 取值，函数体不硬编码系统列名。
 # 新增 EDC 类型时在此补一行即可。
+# 注：coding-guide.md「系统列」表是本注册表的文档副本，改此处（增删 EDC / 改列名）须同步该文件。
 #
 # 6 个角色可完全定位 EDC 中的每一个数据点：
 #   center      中心编号
@@ -145,6 +146,8 @@ def load_sheet(
     sheet = _resolve_sheet_name(form_oid, form_name)
     # 受试者(筛选号)、随机号为 ID 编码，强制 str 读取以保留前导零；
     # pandas 会忽略 sheet 中不存在的 dtype 键，故对所有 sheet 传入无副作用。
+    # 注：此处硬编码的"随机号"仅命中中文表头（clinflash/taimei）；cmis 等英文表头的
+    #     随机号列由 load_rand 按实际列名兜底强制 str（见下）。
     # caller 显式传入的 dtype 优先（dict 合并覆盖，或整体替换）。
     id_dtype = {system_cols("subject"): str, "随机号": str}
     if isinstance(dtype, dict):
@@ -164,15 +167,20 @@ def load_rand(cols: list[str] | None = None) -> pd.DataFrame:
 
     Args:
         cols: 指定读取的列名列表。受试者列由 system_cols("subject") 自动解析；
-              表单字段列（如"随机号"）为 clinflash 列名，其他 EDC 项目需通过
-              cols 传入对应的表单字段列名。
+              表单字段列（如"随机号"）为示例默认列名（随 EDC 而异），其他 EDC
+              项目需通过 cols 传入对应的表单字段列名。本函数用于读取 ID 类列，
+              cols 中除受试者外的列一律强制 str 读取以保前导零，勿传日期列。
 
     Returns:
         DataFrame
     """
     default_cols = [system_cols("subject"), "随机号"]
     usecols = cols or default_cols
-    return load_sheet("DS_RAND", usecols=usecols)
+    # 随机号等 ID 列强制 str 保前导零；因随机号列名随 EDC 而异（cmis 为英文 SAS 名，
+    # load_sheet 内硬编码的"随机号"命不中），此处按实际 usecols 中非受试者列兜底。
+    _subj = system_cols("subject")
+    _id_dtype = {c: str for c in usecols if c != _subj}
+    return load_sheet("DS_RAND", usecols=usecols, dtype=_id_dtype)
 
 
 def load_completion(cols: list[str] | None = None) -> pd.DataFrame:
@@ -180,8 +188,8 @@ def load_completion(cols: list[str] | None = None) -> pd.DataFrame:
 
     Args:
         cols: 指定读取的列名列表。受试者列由 system_cols("subject") 自动解析；
-              表单字段列（如"受试者是否完成试验_TXT"）为 clinflash 列名，
-              其他 EDC 项目需通过 cols 传入对应的表单字段列名。
+              表单字段列（如 taimei 的解码列"受试者是否完成试验_TXT"）为示例默认
+              列名（随 EDC 而异），其他 EDC 项目需通过 cols 传入对应的表单字段列名。
 
     Returns:
         DataFrame
@@ -196,8 +204,8 @@ def load_first_dose(cols: list[str] | None = None) -> pd.DataFrame:
 
     Args:
         cols: 指定读取的列名列表，格式必须为 [受试者列, 开始日期列]（顺序固定）。
-              受试者列由 system_cols("subject") 自动解析；开始日期列为 clinflash
-              列名"开始日期"，其他 EDC 项目需通过 cols 传入对应的表单字段列名。
+              受试者列由 system_cols("subject") 自动解析；开始日期列（如"开始日期"）
+              为示例默认列名（随 EDC 而异），其他 EDC 项目需通过 cols 传入对应列名。
 
     Returns:
         DataFrame with columns [受试者, 首次用药日期]
