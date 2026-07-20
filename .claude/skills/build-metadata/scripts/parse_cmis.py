@@ -108,5 +108,5 @@ def parse(wb, output_dir):
     return {
         "VisitForm": {"visitForms": visit_forms},
         "FormField": {"variables": variables},
-        "CodeList": codelist_out,
+        "CodeList": {"codeLists": codelist_out},
     }

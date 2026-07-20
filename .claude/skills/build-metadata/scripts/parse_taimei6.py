@@ -8,7 +8,7 @@ parse_taimei6.py
 输出文件（通用命名，所有 EDC 解析器共用）:
   - VisitForm.json : 访视与表单的包含关系（Plan20）
   - FormField.json : 表单与字段的关系及字段属性（FormItem）
-  - CodeList.json  : 完整编码表（CodeList + CodeListItems）
+  - CodeList.json  : 完整编码表（仅 CodeListItems；码表以 CodeListOID 命名）
 """
 from _compat import read_sheet, has_other
 
@@ -17,7 +17,7 @@ from _compat import read_sheet, has_other
 
 
 def _build_codelist(wb):
-    """从 CodeList + CodeListItems 构建编码表字典。"""
+    """从 CodeListItems 构建编码表字典（按 CodeListOID 分组、以 OID 命名）。"""
     cli_rows = read_sheet(wb, "CodeListItems")
 
     codelist = {}
@@ -84,6 +84,8 @@ def _build_form_fields(wb, codelist):
 
 def _build_visit_forms(wb):
     """从 Plan20 sheet 解析访视-表单矩阵。"""
+    if "Plan20" not in wb.sheetnames:
+        return []
     ws = wb["Plan20"]
     rows = list(ws.iter_rows(values_only=True))
     if len(rows) < 2:
@@ -124,5 +126,5 @@ def parse(wb, output_dir):
     return {
         "VisitForm": {"visitForms": visit_forms},
         "FormField": {"variables": variables},
-        "CodeList": codelist,
+        "CodeList": {"codeLists": codelist},
     }

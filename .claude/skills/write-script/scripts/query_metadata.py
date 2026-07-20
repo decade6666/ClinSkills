@@ -49,6 +49,18 @@ def _load(name):
         return json.load(f)
 
 
+def _load_codelists():
+    """返回编码表字典 {name: [items]}。
+
+    兼容两种 CodeList.json 结构：新版 wrapper（{"codeLists": {...}, "_meta": ...}）
+    与旧版扁平（顶层即码表，含 build-metadata 注入的 "_meta" 伪键，需剔除）。
+    """
+    cl = _load("CodeList")
+    if "codeLists" in cl:
+        return cl["codeLists"]
+    return {k: v for k, v in cl.items() if k != "_meta"}
+
+
 # EDC 系统 → 解码列后缀（对应 build-metadata 写入的 _meta.edcType）
 # clinflash 无独立解码列，解码值直接存在主列 {itemName}({fieldOID}) 中
 _DECODE_SUFFIX = {
@@ -160,7 +172,7 @@ def cmd_search(keyword):
 
 def cmd_codelist(name):
     """查看指定编码表的枚举值。"""
-    cl = _load("CodeList")
+    cl = _load_codelists()
     if name in cl:
         items = cl[name]
         print(f"编码表 {name} ({len(items)} 项):\n")
@@ -179,7 +191,7 @@ def cmd_codelist(name):
 
 def cmd_codelists():
     """列出所有编码表。"""
-    cl = _load("CodeList")
+    cl = _load_codelists()
     print(f"共 {len(cl)} 个编码表:\n")
     for name, items in cl.items():
         print(f"  {name}: {len(items)} 项")
@@ -227,7 +239,7 @@ def cmd_find_field(sas_name):
 def cmd_field_codelist(field_name):
     """根据字段名（SAS 名或字段标签）查询其编码表枚举值。"""
     ff = _load("FormField")
-    cl_data = _load("CodeList")
+    cl_data = _load_codelists()
 
     # 按 SAS 字段名或字段标签匹配
     matched = [v for v in ff.get("variables", [])
@@ -276,7 +288,7 @@ def cmd_summary():
     """元数据概览。"""
     vf = _load("VisitForm")
     ff = _load("FormField")
-    cl = _load("CodeList")
+    cl = _load_codelists()
 
     visits = vf.get("visitForms", [])
     variables = ff.get("variables", [])
