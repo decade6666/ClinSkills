@@ -136,7 +136,7 @@ def load_sheet(
 
     Args:
         form_oid: 表单 OID（即 sheet 名的核心部分）
-        usecols / cols: 只读取指定列（中文列名列表），cols 为 usecols 的别名
+        usecols / cols: 只读取指定列（EDC 实际列名列表：字段标签或 SAS 名），cols 为 usecols 的别名
         form_name: 表单中文名（cmis 用于拼接 sheet 名；省略则自动从元数据查找）
         dtype: 列类型覆盖（传给 pd.read_excel 的 dtype 参数，用于保留前导零等）
 
@@ -146,8 +146,8 @@ def load_sheet(
     sheet = _resolve_sheet_name(form_oid, form_name)
     # 受试者(筛选号)、随机号为 ID 编码，强制 str 读取以保留前导零；
     # pandas 会忽略 sheet 中不存在的 dtype 键，故对所有 sheet 传入无副作用。
-    # 注：此处硬编码的"随机号"仅命中中文表头（clinflash/taimei）；cmis 等英文表头的
-    #     随机号列由 load_rand 按实际列名兜底强制 str（见下）。
+    # 注：此处硬编码的"随机号"是字段标签字面量，仅命中标签恰为"随机号"的表头（clinflash/taimei 常见）；
+    #     cmis（用 SAS 名）或英文标签项目命不中，其随机号列由 load_rand 按实际列名兜底强制 str（见下）。
     # caller 显式传入的 dtype 优先（dict 合并覆盖，或整体替换）。
     id_dtype = {system_cols("subject"): str, "随机号": str}
     if isinstance(dtype, dict):
@@ -176,8 +176,8 @@ def load_rand(cols: list[str] | None = None) -> pd.DataFrame:
     """
     default_cols = [system_cols("subject"), "随机号"]
     usecols = cols or default_cols
-    # 随机号等 ID 列强制 str 保前导零；因随机号列名随 EDC 而异（cmis 为英文 SAS 名，
-    # load_sheet 内硬编码的"随机号"命不中），此处按实际 usecols 中非受试者列兜底。
+    # 随机号等 ID 列强制 str 保前导零；因随机号列名随 EDC 而异（cmis 用 SAS 名、
+    # 标签也可能是英文，load_sheet 内硬编码的"随机号"命不中），此处按实际 usecols 中非受试者列兜底。
     _subj = system_cols("subject")
     _id_dtype = {c: str for c in usecols if c != _subj}
     return load_sheet("DS_RAND", usecols=usecols, dtype=_id_dtype)

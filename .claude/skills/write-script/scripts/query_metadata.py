@@ -15,7 +15,7 @@ query_metadata.py — 元数据查询工具
     codelists                   列出所有编码表名称及条目数
     visits                      列出所有访视及关联表单
     find-field <sasFieldName>   按 SAS 字段名精确查找字段所在表单
-    field-codelist <fieldName>  根据字段名（SAS名或中文标签）查询其编码表枚举值
+    field-codelist <fieldName>  根据字段名（SAS名或字段标签）查询其编码表枚举值
     summary                     输出元数据概览（表单数、字段数、编码表数）
 """
 
@@ -225,11 +225,11 @@ def cmd_find_field(sas_name):
 
 
 def cmd_field_codelist(field_name):
-    """根据字段名（SAS 名或中文标签）查询其编码表枚举值。"""
+    """根据字段名（SAS 名或字段标签）查询其编码表枚举值。"""
     ff = _load("FormField")
     cl_data = _load("CodeList")
 
-    # 按 SAS 字段名或中文标签匹配
+    # 按 SAS 字段名或字段标签匹配
     matched = [v for v in ff.get("variables", [])
                if v.get("sasFieldName", "") == field_name
                or v.get("itemName", "") == field_name]
