@@ -46,7 +46,7 @@ git diff --cached                 # 完整 diff（输出长时分批读取）
 
 对每个变更，对照以下 7 个维度逐一判断。**某维度无问题则跳过，不在输出表格中占行。**
 
-**Agent 辅助：** 变更涉及 Python 文件时，并行 spawn `python-reviewer` Agent，prompt 中指定 `mode: diff`，对 diff 做 PEP 8 / Pythonic + 明显错误深度审查，覆盖维度 1 和维度 7。Agent 返回结果直接并入输出表格，主 skill 不再重复检查这两个维度的 Python 专项问题，聚焦维度 2-6（项目感知维度）。非 Python 文件（.md / .yaml / .json）全部维度由主 skill 人工审查。
+**Agent 辅助：** 变更涉及 Python 文件时，并行 spawn `python-reviewer` Agent，prompt 中指定 `mode: diff`，对 diff 做 PEP 8 / Pythonic + 明显错误深度审查，覆盖维度 1 和维度 7。Agent 返回结果并入输出表格（其 致命/重要/建议 三级映射为本表的 严重/高/中/低，归入维度 1/7），主 skill 不再重复检查这两个维度的 Python 专项问题，聚焦维度 2-6（项目感知维度）。非 Python 文件（.md / .yaml / .json）全部维度由主 skill 人工审查。
 
 | # | 维度 | 核心判据 | 审查方式 |
 |---|------|---------|---------|

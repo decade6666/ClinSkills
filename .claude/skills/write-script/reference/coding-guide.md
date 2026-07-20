@@ -149,7 +149,7 @@ _RENAME_MAP = {
 | 5 | 派生 | 日期差、`np.where`、多选拼接、regex |
 | 6 | 连接 | `.merge()` / `pd.concat()` |
 | 7 | 格式化 | 选列、列序、`strftime`、`%` 格式化 |
-| 8 | 输出 | `save_table_to_docx_threeline` / `export_to_excel_with_format` |
+| 8 | 输出 | `save_table_to_docx_threeline` / `export_to_one_excel_with_format` |
 
 - 步骤可重复、可交错（如 3→6→5→7→8），非每步必选
 - 不需要的步骤直接跳过，不写空标记
