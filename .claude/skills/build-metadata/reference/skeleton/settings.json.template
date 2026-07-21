@@ -1,0 +1,41 @@
+{
+  "permissions": {
+    "deny": [
+      "Read(01 rawdata/**)",
+      "Edit(**/*.ipynb)",
+      "Write(**/*.ipynb)",
+      "NotebookEdit(**/*.ipynb)"
+    ],
+    "allow": [
+      "Read(**)",
+      "Glob(**)",
+      "Grep(**)",
+      "Edit(04 scripts/**)",
+      "Edit(utils/**)",
+      "Edit(config.py)",
+      "Edit(config.yaml)",
+      "Edit(.gitignore)",
+      "Edit(CLAUDE.md)",
+      "Edit(.claude/**)",
+      "Write(04 scripts/**)",
+      "Write(utils/**)",
+      "Bash(python 04 scripts/**)",
+      "Bash(python \"04 scripts/**\")",
+      "Bash(pip install *)",
+      "Bash(git *)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|Read|PowerShell",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"$CLAUDE_PROJECT_DIR/.claude/hooks/raw_read_guard.py\""
+          }
+        ]
+      }
+    ]
+  }
+}

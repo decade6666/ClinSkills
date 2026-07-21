@@ -61,7 +61,7 @@
 | `requirements.txt` | `skeleton/requirements.txt.template` | Python 依赖 |
 
 > 模板一律用 `.template` 后缀，避免 `.gitignore` / `config.py` 等在本目录被 git 或工具当作生效文件。
-> `utils/`（工具层代码）不走 `.template`：由 build-metadata Step 2c 从 `skeleton/utils/`（全局安装时由安装脚本置入）部署到项目根；在源码仓库自身开发时根 `utils/` 已存在，跳过。
+> **运行时 / 护栏文件**（由 build-metadata Step 2c 部署，项目已有则跳过）：`utils/`（安装脚本置入 `skeleton/utils/`）→ 项目根；`raw_read_guard.py`（安装脚本置入 `skeleton/`）→ 项目 `.claude/hooks/`；`settings.json.template`（随 skill 分发）→ 项目 `.claude/settings.json`。源码仓库自身开发时这些已就位。
 
 ## 目录重命名时的路径同步清单
 
