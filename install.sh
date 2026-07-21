@@ -33,6 +33,15 @@ for sub in skills agents hooks; do
 done
 
 python3 "$tmp/install/merge_hook.py" "$claude_dir"
+
+# 阶段2：把 utils/ 暂存进 build-metadata skeleton，供其脚手架进各临床项目
+skel_utils="$claude_dir/skills/build-metadata/reference/skeleton/utils"
+if [ -d "$tmp/utils" ] && [ -d "$claude_dir/skills/build-metadata" ]; then
+  rm -rf "$skel_utils"; mkdir -p "$(dirname "$skel_utils")"
+  cp -R "$tmp/utils" "$skel_utils"
+  echo "  + build-metadata/reference/skeleton/utils （供项目脚手架）"
+fi
+
 echo ""
 echo "完成。skills / agents / hooks 已装到 $claude_dir（全局可用）。"
 echo "新临床项目：进入项目目录后触发 build-metadata 脚手架结构并解析元数据。"

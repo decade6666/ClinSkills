@@ -36,6 +36,17 @@ try {
         }
     }
     python "$tmp/install/merge_hook.py" $claudeDir
+
+    # 阶段2：把 utils/ 暂存进 build-metadata skeleton，供其脚手架进各临床项目
+    $srcUtils = Join-Path $tmp 'utils'
+    $skelUtils = Join-Path $claudeDir 'skills/build-metadata/reference/skeleton/utils'
+    if ((Test-Path $srcUtils) -and (Test-Path (Join-Path $claudeDir 'skills/build-metadata'))) {
+        if (Test-Path $skelUtils) { Remove-Item -Recurse -Force $skelUtils }
+        New-Item -ItemType Directory -Force -Path (Split-Path $skelUtils) | Out-Null
+        Copy-Item -Recurse -Force -Path $srcUtils -Destination $skelUtils
+        Write-Host "  + build-metadata/reference/skeleton/utils （供项目脚手架）" -ForegroundColor Green
+    }
+
     Write-Host ""
     Write-Host "完成。skills / agents / hooks 已装到 $claudeDir（全局可用）。" -ForegroundColor Cyan
     Write-Host "新临床项目：进入项目目录后触发 build-metadata 脚手架结构并解析元数据。" -ForegroundColor DarkGray
