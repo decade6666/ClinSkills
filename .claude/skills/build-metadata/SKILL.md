@@ -90,13 +90,14 @@ Read ${CLAUDE_PROJECT_DIR}/.claude/skills/build-metadata/reference/project-struc
 
 **CLAUDE.md EDC 类型替换规则：** 删除 `<!-- EDC_TYPE_HEADER_START -->` 至 `<!-- EDC_TYPE_HEADER_END -->` 之间的全部行（含注释与默认占位行），插入 Step 1 选定 EDC 对应的表头约定行——**三类取值见 `write-script/reference/header-structure.md`「写回 CLAUDE.md 的格式」节（表头规则的权威表述）**。
 
-**2c. 部署工具层与项目护栏**
+**2c. 部署工具层 `utils/`**
 
-以下运行时 / 护栏文件随全局安装由安装脚本置入 `reference/skeleton/`；**项目已有则不覆盖**，`reference/skeleton/` 下缺失也跳过（在本 skill 源码仓库自身开发时它们不存在、且项目根已具备）：
+`utils/`（`loaders` 数据读取 + `output_docx`/`output_xlsx`/`output_format` 报表输出 + `date_compare` 等）是脚本**运行时 import** 的代码层，缺它 write-script 生成的脚本无法运行。
 
-- **工具层 `utils/`**：脚本**运行时 import** 的 `loaders`/`output_docx`/`output_xlsx`/`output_format`/`date_compare` 等，缺它 write-script 生成的脚本跑不了。项目根无 `utils/` → 从 `reference/skeleton/utils/` 复制到项目 `utils/`。
-- **raw 护栏 `raw_read_guard.py`**：项目无 `.claude/hooks/raw_read_guard.py` → 从 `reference/skeleton/raw_read_guard.py` 复制过去。
-- **项目 `settings.json`**：项目无 `.claude/settings.json` → 复制 `reference/skeleton/settings.json.template` 为 `.claude/settings.json`（含 deny raw + 权限 + raw_read_guard 注册；语法检查 hook 由全局安装提供、不在此重复）。
+- 项目根**无** `utils/` → 从 `reference/skeleton/utils/` 复制全部文件到项目 `utils/`（该目录随全局安装由安装脚本置入）。
+- 已有 `utils/`（源码仓库自身开发），或 `reference/skeleton/utils/` 不存在，则跳过。
+
+> **项目无需自带 `.claude/`**：skills/agents、语法检查 hook、raw 数据保护（deny + raw_read_guard，全局安全版）均由全局安装注册进 `~/.claude/settings.json`，跨项目生效。
 
 **2d. 报告校验结果**
 

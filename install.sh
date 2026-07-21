@@ -42,13 +42,6 @@ if [ -d "$tmp/utils" ] && [ -d "$claude_dir/skills/build-metadata" ]; then
   echo "  + build-metadata/reference/skeleton/utils （供项目脚手架）"
 fi
 
-# 阶段3：暂存 raw 护栏进 skeleton（build-metadata 部署进各项目 .claude/hooks/）
-skel_dir="$claude_dir/skills/build-metadata/reference/skeleton"
-if [ -f "$tmp/.claude/hooks/raw_read_guard.py" ] && [ -d "$skel_dir" ]; then
-  cp -f "$tmp/.claude/hooks/raw_read_guard.py" "$skel_dir/raw_read_guard.py"
-  echo "  + build-metadata/reference/skeleton/raw_read_guard.py （项目护栏）"
-fi
-
 echo ""
 echo "完成。skills / agents / hooks 已装到 $claude_dir（全局可用）。"
 echo "新临床项目：进入项目目录后触发 build-metadata 脚手架结构并解析元数据。"

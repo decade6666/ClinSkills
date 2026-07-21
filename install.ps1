@@ -47,14 +47,6 @@ try {
         Write-Host "  + build-metadata/reference/skeleton/utils （供项目脚手架）" -ForegroundColor Green
     }
 
-    # 阶段3：暂存 raw 护栏进 skeleton（build-metadata 部署进各项目 .claude/hooks/）
-    $srcGuard = Join-Path $tmp '.claude/hooks/raw_read_guard.py'
-    $skelDir = Join-Path $claudeDir 'skills/build-metadata/reference/skeleton'
-    if ((Test-Path $srcGuard) -and (Test-Path $skelDir)) {
-        Copy-Item -Force -Path $srcGuard -Destination (Join-Path $skelDir 'raw_read_guard.py')
-        Write-Host "  + build-metadata/reference/skeleton/raw_read_guard.py （项目护栏）" -ForegroundColor Green
-    }
-
     Write-Host ""
     Write-Host "完成。skills / agents / hooks 已装到 $claudeDir（全局可用）。" -ForegroundColor Cyan
     Write-Host "新临床项目：进入项目目录后触发 build-metadata 脚手架结构并解析元数据。" -ForegroundColor DarkGray

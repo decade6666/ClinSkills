@@ -16,7 +16,7 @@ irm https://raw.githubusercontent.com/Doraemon-code/ClinSkills/master/install.ps
 curl -fsSL https://raw.githubusercontent.com/Doraemon-code/ClinSkills/master/install.sh | bash
 ```
 
-装完 `~/.claude/` 下会有 skills、agents、hooks，并注册通用语法检查 hook。**同名 skill 会被覆盖更新**，重跑即更新。依赖：`git`、`python`（在 PATH 上）。
+装完 `~/.claude/` 下会有 skills、agents、hooks，并注册语法检查 + raw 数据保护 hook（全局安全版）。**同名 skill 会被覆盖更新**，重跑即更新。依赖：`git`、`python`（在 PATH 上）。
 
 ## 包含内容
 
@@ -24,7 +24,7 @@ curl -fsSL https://raw.githubusercontent.com/Doraemon-code/ClinSkills/master/ins
 |---|---|
 | Skills | `build-metadata`、`write-script`、`review-changes`、`audit-harness`、`build-skill` |
 | Agents | `metadata-explorer`、`python-reviewer` |
-| Hooks | `syntax_check`（全局注册）、`raw_read_guard`（项目级，由 build-metadata 部署） |
+| Hooks | `syntax_check`、`raw_read_guard`（均全局注册；`raw_read_guard` 为**全局安全版**，仅当命令确切指向 raw 时才拦） |
 
 ## 用法
 
@@ -35,10 +35,10 @@ curl -fsSL https://raw.githubusercontent.com/Doraemon-code/ClinSkills/master/ins
 
 ## 卸载
 
-删除 `~/.claude/skills/` 下 `build-metadata`、`write-script`、`review-changes`、`audit-harness`、`build-skill`，`~/.claude/agents/` 下 `metadata-explorer`、`python-reviewer`，并从 `~/.claude/settings.json` 的 `hooks.PostToolUse` 移除 `syntax_check` 条目。
+删除 `~/.claude/skills/` 下 `build-metadata`、`write-script`、`review-changes`、`audit-harness`、`build-skill`，`~/.claude/agents/` 下 `metadata-explorer`、`python-reviewer`，`~/.claude/hooks/` 下 `syntax_check.py`、`raw_read_guard.py`，并从 `~/.claude/settings.json` 移除对应的 `hooks` 条目与 `deny Read(01 rawdata/**)`。
 
 ## 设计说明
 
-- **全局只注册通用语法检查 hook**；raw 数据保护等项目级约束由 `build-metadata` 写进各项目的 `.claude/`，避免全局副作用。
-- `syntax_check` / `raw_read_guard` 优先用 `CLAUDE_PROJECT_DIR` 定位当前项目，故全局安装后仍能正确作用于目标项目。
-- `utils/`（数据读取 `loaders` / 输出 `output_docx`·`output_xlsx` 层）是项目运行时被 import 的代码，由 `build-metadata` 脚手架进目标项目（见 build-metadata skill）。
+- **项目无需自带 `.claude/`**：skills / agents、语法检查 hook、raw 数据保护（`deny Read(01 rawdata/**)` + `raw_read_guard`）全部注册进全局 `~/.claude/`，跨项目生效。
+- **全局安全**：`raw_read_guard` 只在命令**确切指向 raw**（出现 `01 rawdata/…xlsx` 字面路径，或读调用 + `raw_path` 变量）时才拦，非临床项目里普通的 `read_excel(` 不受影响；`syntax_check` 只作用于 `04 scripts/` 与 `utils/`。两者优先用 `CLAUDE_PROJECT_DIR` 定位当前项目。
+- `utils/`（`loaders` 读取 / `output_docx`·`output_xlsx` 输出层）是项目运行时被 import 的代码，由 `build-metadata` 脚手架进目标项目（源仓库 `utils/` 单一源，安装时置入 build-metadata skeleton）。

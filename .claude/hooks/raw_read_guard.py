@@ -1,17 +1,22 @@
 #!/usr/bin/env python
-"""PreToolUse 钩子：严禁不经同意直接读取 raw 原始数据；允许直接读取 metadata。
+"""PreToolUse 钩子：拦截直接读取 raw 原始数据；允许读取 metadata。**全局安全**。
 
-由 .claude/settings.json 的 PreToolUse 钩子调用（matcher: Bash|Read|PowerShell），读取 stdin
-的工具事件 JSON。落地 constraints.md #2"查数据形状先用 query_metadata.py"的机制下限。
+由 settings.json 的 PreToolUse 钩子调用（matcher: Bash|Read|PowerShell），读 stdin 的工具事件
+JSON。落地 constraints.md #2「查数据形状先用 query_metadata.py」的机制下限。
+
+**全局安全**：本 hook 设计为可注册进用户级 `~/.claude/settings.json`（跨项目生效）而不误伤非临床
+项目——只针对**确切指向 raw 原始数据**的操作判定，绝不因命令里出现裸 `read_excel(` / openpyxl 就拦。
 
 判定：
-- 02 metadata/ 下的表格文件 → 显式放行（无需弹窗）
-- 01 rawdata/ 下的表格文件 → 硬拒绝（禁止直接读取，引导使用 query_metadata.py）
-- Bash 命令中出现 raw 读取特征 → 硬拒绝（排除 04 scripts/ 脚本、query_metadata.py，
-  以及命令内每个读取调用都带 nrows≤2 的兜底读取——见 constraints #2）
+- Read 工具：`02 metadata/` 下表格文件 → 放行；`01 rawdata/` 下 → 硬拒绝。
+  项目根优先取 `CLAUDE_PROJECT_DIR`（全局安装到 `~/.claude/hooks/` 仍能定位当前项目）。
+- Bash / PowerShell：仅当命令 (a) 出现字面 `01 rawdata/…xlsx|xls|csv` 路径，或 (b) 有实际读调用
+  （`read_excel(` / `load_workbook(` / `ExcelFile(`）且用了 `raw_path` 配置变量 → 硬拒绝。
+  排除：`query_metadata.py`、`04 scripts/` 脚本、每个读取都带 `nrows≤2` 的兜底读取（constraints #2）。
 """
 
 import json
+import os
 import re
 import sys
 from pathlib import Path
@@ -22,23 +27,22 @@ for _stream in (sys.stdout, sys.stderr):
     except (AttributeError, ValueError):
         pass
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
+# 项目根：优先 Claude Code 注入的 CLAUDE_PROJECT_DIR（本 hook 全局安装到 ~/.claude/hooks/
+# 时仍能定位当前项目）；未设置则回退本文件向上三级（本仓库自身作项目时成立）。
+PROJECT_ROOT = Path(os.environ.get("CLAUDE_PROJECT_DIR") or Path(__file__).resolve().parents[2])
 
 _DATA_SUFFIXES = {".xlsx", ".xls", ".csv"}
 
-# Bash 命令中"读 raw 原始数据"的特征。
-# 读函数要求紧跟左括号 `\s*\(`，即只匹配"实际调用"而非裸标识符——避免命中 import 语句
-# （from openpyxl import load_workbook）、grep 模式、或生成/编辑源码时字符串里的同名 token。
-# 不含裸 "openpyxl"：纯 import / pip 安装不视为读数据；实际读表走 load_workbook()。
-# raw_path 为配置变量，作读源时保留裸匹配（覆盖 read_csv(raw_path) 等非上述三函数的读取）。
-_RAW_READ_RE = re.compile(r"(?:read_excel|load_workbook|ExcelFile)\s*\(|raw_path")
-_RAW_PATH_RE = re.compile(r"""(?:raw[/\\]|rawdata[/\\]|01\s+rawdata[/\\])[^"'\s]*\.(?:xlsx|xls|csv)""", re.IGNORECASE)
-_RUN_SCRIPT_RE = re.compile(r"""python[\w.]*\s+["']?(?:04\s+)?scripts[/\\]""")
-# constraints #2 兜底：带行数上限（nrows≤2，含表头≤3 行）的受控读取属例外，放行
-_BOUNDED_NROWS_RE = re.compile(r"nrows\s*=\s*[012]\b")
-# 读取调用计数（判定"命令中每个读取都带 nrows 上限"，防无界读混入绕过）；
-# 与 _RAW_READ_RE 同口径，要求紧跟左括号只计实际调用。
+# 实际读调用：紧跟左括号，只匹配"调用"而非 import / grep / 源码里的裸标识符。
 _READ_CALL_RE = re.compile(r"(?:read_excel|load_workbook|ExcelFile)\s*\(")
+# 字面 raw 原始数据路径：限项目约定的 "01 rawdata/"（带序号+空格，足够特异），
+# 全局注册也不会误伤别的项目里普通的 raw/ 或 rawdata/ 目录。
+_RAW_PATH_RE = re.compile(r"""01\s+rawdata[/\\][^"'\s]*\.(?:xlsx|xls|csv)""", re.IGNORECASE)
+# raw_path 配置变量：仅当与实际读调用同现时才视为"读 raw"。
+_RAW_PATH_VAR_RE = re.compile(r"\braw_path\b")
+_RUN_SCRIPT_RE = re.compile(r"""python[\w.]*\s+["']?(?:04\s+)?scripts[/\\]""")
+# constraints #2 兜底：每个读取都带 nrows≤2（含表头≤3 行）的受控读取放行。
+_BOUNDED_NROWS_RE = re.compile(r"nrows\s*=\s*[012]\b")
 
 _DENY_RAW_REASON = (
     "严禁直接读取 raw 原始数据。按项目约定（constraints.md #2）应先用 "
@@ -115,7 +119,10 @@ def main():
             return 0  # 元数据工具 / scripts 下真实脚本，放行
         if _all_reads_bounded(cmd):
             return 0  # 兜底：每个读取都带 nrows≤2 上限（constraints #2），放行
-        if _RAW_READ_RE.search(cmd) or _RAW_PATH_RE.search(cmd):
+        # 全局安全：仅当命令确切指向 raw 原始数据才拦——
+        #  (a) 出现字面 "01 rawdata/…xlsx" 路径；或 (b) 有实际读调用且用了 raw_path 配置变量。
+        #  裸 read_excel(（无 raw 指向）不拦，避免全局注册后误伤其它项目。
+        if _RAW_PATH_RE.search(cmd) or (_READ_CALL_RE.search(cmd) and _RAW_PATH_VAR_RE.search(cmd)):
             return _decide("deny", _DENY_RAW_REASON)
         return 0
 

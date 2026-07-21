@@ -11,17 +11,6 @@
 ├── 02 metadata/                 # EDC 元数据 Excel + build-metadata 生成的 JSON
 ├── 03 output/                   # 生成的报表（不入 Git）
 ├── 04 scripts/                  # 分析代码（新脚本默认平铺；已有章节目录保持不变）
-├── .claude/                     # Claude Code 配置（不随项目变动）
-│   ├── agents/                    # 自定义 Agent 定义（metadata-explorer / python-reviewer）
-│   ├── hooks/                     # Claude Code PreToolUse/PostToolUse 钩子
-│   │   ├── raw_read_guard.py    # PreToolUse: 禁止直接读 rawdata（Claude Code only）
-│   │   └── syntax_check.py      # PostToolUse: 脚本语法检查（Claude Code only）
-│   ├── rules/
-│   │   └── constraints.md       # 强制约束
-│   ├── settings.json            # 权限配置（permission deny 保护 rawdata）+ hooks 注册
-│   └── skills/
-│       ├── build-metadata/      # 元数据解析技能
-│       └── write-script/        # 脚本编写技能
 ├── utils/                       # 公共工具函数
 │   ├── __init__.py
 │   ├── loaders.py               # 数据读取层（load_sheet / system_cols）
@@ -35,6 +24,8 @@
 ├── config.yaml                  # 数据路径配置
 └── requirements.txt             # Python 依赖
 ```
+
+> harness（skills / agents / hooks / settings）**不在项目内**——全局装在 `~/.claude/`（见 README 一键安装）；项目只含数据、脚本、`utils/` 与配置。
 
 ## 目录命名规则
 
@@ -61,7 +52,7 @@
 | `requirements.txt` | `skeleton/requirements.txt.template` | Python 依赖 |
 
 > 模板一律用 `.template` 后缀，避免 `.gitignore` / `config.py` 等在本目录被 git 或工具当作生效文件。
-> **运行时 / 护栏文件**（由 build-metadata Step 2c 部署，项目已有则跳过）：`utils/`（安装脚本置入 `skeleton/utils/`）→ 项目根；`raw_read_guard.py`（安装脚本置入 `skeleton/`）→ 项目 `.claude/hooks/`；`settings.json.template`（随 skill 分发）→ 项目 `.claude/settings.json`。源码仓库自身开发时这些已就位。
+> **工具层 `utils/`**（不走根 `.template`）：由 build-metadata Step 2c 从 `skeleton/utils/`（全局安装时由安装脚本置入）部署到项目根；源码仓库自身开发时根 `utils/` 已存在，跳过。raw 数据保护与语法检查 hook 均随全局安装注册进 `~/.claude/settings.json`，项目不再自带 `.claude/`。
 
 ## 目录重命名时的路径同步清单
 

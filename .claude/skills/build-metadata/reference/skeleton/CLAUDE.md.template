@@ -41,7 +41,7 @@
 
 ## Agent 清单
 
-自定义 Agent 位于 `.claude/agents/`，通过 Agent 工具的 `subagent_type` 参数调用：
+自定义 Agent 位于全局 `~/.claude/agents/`（随 ClinSkills 一键安装），通过 Agent 工具的 `subagent_type` 参数调用：
 
 | Agent | 模型 | 用途 | 典型调用场景 |
 |---|---|---|---|
