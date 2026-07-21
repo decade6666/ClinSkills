@@ -25,7 +25,9 @@
 ├── utils/                       # 公共工具函数
 │   ├── __init__.py
 │   ├── loaders.py               # 数据读取层（load_sheet / system_cols）
-│   └── output_format.py         # 报表输出函数（三线表、xlsx）
+│   ├── output_docx.py           # docx 三线表输出
+│   ├── output_xlsx.py           # xlsx 清单输出
+│   └── output_format.py         # 报表输出聚合入口（re-export docx/xlsx）
 ├── .gitattributes               # Git 行尾与二进制规则
 ├── .gitignore                   # Git 忽略规则
 ├── CLAUDE.md                    # 项目说明与 Claude Code 约定
