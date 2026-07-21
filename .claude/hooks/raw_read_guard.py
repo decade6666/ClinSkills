@@ -27,14 +27,18 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 _DATA_SUFFIXES = {".xlsx", ".xls", ".csv"}
 
 # Bash 命令中"读 raw 原始数据"的特征。
-# 不含裸 "openpyxl"：纯 import / pip 安装不视为读数据；实际读表走 load_workbook。
-_RAW_READ_RE = re.compile(r"read_excel|load_workbook|ExcelFile|raw_path")
+# 读函数要求紧跟左括号 `\s*\(`，即只匹配"实际调用"而非裸标识符——避免命中 import 语句
+# （from openpyxl import load_workbook）、grep 模式、或生成/编辑源码时字符串里的同名 token。
+# 不含裸 "openpyxl"：纯 import / pip 安装不视为读数据；实际读表走 load_workbook()。
+# raw_path 为配置变量，作读源时保留裸匹配（覆盖 read_csv(raw_path) 等非上述三函数的读取）。
+_RAW_READ_RE = re.compile(r"(?:read_excel|load_workbook|ExcelFile)\s*\(|raw_path")
 _RAW_PATH_RE = re.compile(r"""(?:raw[/\\]|rawdata[/\\]|01\s+rawdata[/\\])[^"'\s]*\.(?:xlsx|xls|csv)""", re.IGNORECASE)
 _RUN_SCRIPT_RE = re.compile(r"""python[\w.]*\s+["']?(?:04\s+)?scripts[/\\]""")
 # constraints #2 兜底：带行数上限（nrows≤2，含表头≤3 行）的受控读取属例外，放行
 _BOUNDED_NROWS_RE = re.compile(r"nrows\s*=\s*[012]\b")
-# 读取调用计数（用于判定"命令中每个读取都带 nrows 上限"，防止混入无界读绕过）
-_READ_CALL_RE = re.compile(r"read_excel|load_workbook|ExcelFile")
+# 读取调用计数（判定"命令中每个读取都带 nrows 上限"，防无界读混入绕过）；
+# 与 _RAW_READ_RE 同口径，要求紧跟左括号只计实际调用。
+_READ_CALL_RE = re.compile(r"(?:read_excel|load_workbook|ExcelFile)\s*\(")
 
 _DENY_RAW_REASON = (
     "严禁直接读取 raw 原始数据。按项目约定（constraints.md #2）应先用 "
