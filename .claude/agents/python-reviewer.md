@@ -34,7 +34,7 @@ Read .claude/skills/write-script/reference/review-checklist.md
 
 根据调用方传入的 prompt，选择以下方式之一：
 
-- **脚本路径**（如 `04 scripts/a.试验整体情况小结/xxx.py`）：用 `Read` 读取全文
+- **脚本路径**（如 `04 scripts/xxx.py`，或既有章节目录中的路径）：用 `Read` 读取全文
 - **代码 diff**：直接使用 prompt 中提供的 diff 文本
 - **git 暂存区**：`git diff --cached -- <文件路径>`
 

@@ -13,6 +13,7 @@ __pycache__/
 
 # Scripts (local only, not tracked)
 04 scripts/
+05 docs/
 
 # OS
 .DS_Store

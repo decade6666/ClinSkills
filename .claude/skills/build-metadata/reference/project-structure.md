@@ -10,7 +10,7 @@
 ├── 01 rawdata/                  # 原始数据（不入 Git）
 ├── 02 metadata/                 # EDC 元数据 Excel + build-metadata 生成的 JSON
 ├── 03 output/                   # 生成的报表（不入 Git）
-├── 04 scripts/                  # 分析代码（按章节分子文件夹，脚本置于 04 scripts/<章节>/）
+├── 04 scripts/                  # 分析代码（新脚本默认平铺；已有章节目录保持不变）
 ├── .claude/                     # Claude Code 配置（不随项目变动）
 │   ├── agents/                    # 自定义 Agent 定义（metadata-explorer / python-reviewer）
 │   ├── hooks/                     # Claude Code PreToolUse/PostToolUse 钩子
