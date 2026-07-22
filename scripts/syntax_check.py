@@ -23,7 +23,7 @@ for _stream in (sys.stdout, sys.stderr):
         pass
 
 # 项目根：优先 Claude Code 注入的 CLAUDE_PROJECT_DIR（本 hook 随 ClinSkills plugin 安装，
-# 通过 $PLUGIN_ROOT 定位）；未设置则回退本文件向上三级（本仓库自身作项目时成立）。
+# 通过 $CLAUDE_PLUGIN_ROOT 定位）；未设置则回退本文件向上三级（本仓库自身作项目时成立）。
 PROJECT_ROOT = Path(os.environ.get("CLAUDE_PROJECT_DIR") or Path(__file__).resolve().parents[2])
 
 

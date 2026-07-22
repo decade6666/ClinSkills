@@ -69,7 +69,8 @@ hasOther=true）配 `DSCATOTH`（自由文本，fieldFormat=LongText）。
 |------|----------|
 | `scripts/build-metadata.py` | 在 `PARSERS` 映射中注册新 `edcType` 键 |
 | `scripts/parse_<newtype>.py` | 新建解析模块，输出 `VisitForm.json`、`FormField.json`、`CodeList.json` |
-| `SKILL.md` Step 1 | 在 AskUserQuestion 选项中添加新 EDC 类型 |
+| `SKILL.md` Step 1 | 在 AskUserQuestion 选项中添加新 EDC 类型（如回退询问路径被触发） |
+| `skills/init-project/SKILL.md` Step 1 | 在 AskUserQuestion 选项中添加新 EDC 类型 |
 | 本文件「EDC 类型与 sheet 映射」节 | 补充新类型的 sheet 映射表 |
 
 输出文件名 `VisitForm`、`FormField`、`CodeList` 是通用约定，新解析器必须遵循，不得自定义文件名。

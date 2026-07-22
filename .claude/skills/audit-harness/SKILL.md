@@ -19,7 +19,7 @@ description: |
 指「Claude 怎么在这个项目里干活」这一层，**不是业务/数据分析代码**。
 
 本项目是 Claude Code Plugin 源仓库，目录分为两类：
-- **对外分发**（plugin 安装后用户可见）：`skills/`（对外 3 个 skill）、`agents/`、`hooks/hooks.json`、`scripts/`
+- **对外分发**（plugin 安装后用户可见）：`skills/`（对外 4 个 skill）、`agents/`、`hooks/hooks.json`、`scripts/`
 - **内部开发**（仅本仓库生效）：`.claude/skills/`（dev-only）、`.claude/settings.json`、`CLAUDE.md`
 
 | 类别 | 路径 |

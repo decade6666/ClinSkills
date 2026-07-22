@@ -2,7 +2,7 @@
 """PreToolUse 钩子：拦截直接读取 raw 原始数据；允许读取 metadata。**全局安全**。
 
 由 hooks/hooks.json 声明，随 ClinSkills plugin 加载（matcher: Bash|Read|PowerShell），读 stdin 的工具事件
-JSON。落地 constraints.md #2「查数据形状先用 query_metadata.py」的机制下限。
+JSON。落地 CLAUDE.md 强制约束第 2 条「查数据形状先用 query_metadata.py」的机制下限。
 
 **全局安全**：本 hook 设计为可注册进用户级 `~/.claude/settings.json`（跨项目生效）而不误伤非临床
 项目——只针对**确切指向 raw 原始数据**的操作判定，绝不因命令里出现裸 `read_excel(` / openpyxl 就拦。
@@ -28,7 +28,7 @@ for _stream in (sys.stdout, sys.stderr):
         pass
 
 # 项目根：优先 Claude Code 注入的 CLAUDE_PROJECT_DIR（本 hook 随 ClinSkills plugin 安装，
-# 通过 $PLUGIN_ROOT 定位）；未设置则回退本文件向上三级（本仓库自身作项目时成立）。
+# 通过 $CLAUDE_PLUGIN_ROOT 定位）；未设置则回退本文件向上三级（本仓库自身作项目时成立）。
 PROJECT_ROOT = Path(os.environ.get("CLAUDE_PROJECT_DIR") or Path(__file__).resolve().parents[2])
 # 本项目是否为临床数据项目（存在 01 rawdata/）——用于门控只在临床项目才成立的启发式，
 # 使本 hook 全局注册后不误伤普通数据项目（如其中恰有名为 raw_path 的变量）。
@@ -48,7 +48,7 @@ _RUN_SCRIPT_RE = re.compile(r"""python[\w.]*\s+["']?(?:04\s+)?scripts[/\\]""")
 _BOUNDED_NROWS_RE = re.compile(r"nrows\s*=\s*[012]\b")
 
 _DENY_RAW_REASON = (
-    "严禁直接读取 raw 原始数据。按项目约定（constraints.md #2）应先用 "
+    "严禁直接读取 raw 原始数据。按项目约定（CLAUDE.md 强制约束第 2 条）应先用 "
     "query_metadata.py 无接触查询字段名/编码表/列名结构（用法见 write-script skill "
     "Step 2），查不到再考虑其他方式。"
 )

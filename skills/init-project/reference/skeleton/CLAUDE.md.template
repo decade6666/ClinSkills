@@ -6,7 +6,7 @@
 ## Directory Structure
 ```
 ├── 01 rawdata/          # 原始数据（不入 Git）
-├── 02 metadata/         # EDC 元数据 Excel + build-metadata 生成的 JSON
+├── 02 metadata/         # EDC 元数据 Excel + build-metadata、init-project 生成的 JSON
 ├── 03 output/           # 生成的报表（不入 Git）
 ├── 04 scripts/            # 分析代码（新脚本默认平铺；已有章节目录保持不变）
 ├── utils/              # 公共工具函数
@@ -30,7 +30,7 @@
 编码规范（变量前缀、列名集中管理、八步操作模型、脚本模板等）详见 `/write-script` skill 的 `SKILL.md`。以下为跨 skill 的通用约定：
 
 <!-- EDC_TYPE_HEADER_START -->
-<!-- build-metadata Step 2b：按 Step 1 选定的 EDC 类型替换下方约定行， -->
+<!-- init-project Step 2b：按 Step 1 选定的 EDC 类型替换下方约定行， -->
 <!-- 三类取值见 skills/write-script/reference/header-structure.md「写回 CLAUDE.md 的格式」节。 -->
 - 表头结构：`header=0`（单行字段标签，编码字段含 `(fieldOID)` 缩写后缀；无 skiprows）
 <!-- EDC_TYPE_HEADER_END -->

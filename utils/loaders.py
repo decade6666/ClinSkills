@@ -12,8 +12,8 @@ try:
     from config import raw_path
 except ImportError:
     sys.exit(
-        "缺少 config.py。请先运行 build-metadata 初始化项目结构，"
-        "或参考 skills/build-metadata/reference/skeleton/config.py.template 创建。"
+        "缺少 config.py。请先运行 init-project 初始化项目结构，"
+        "或参考 skills/init-project/reference/skeleton/config.py.template 创建。"
     )
 from pathlib import Path
 from typing import overload
@@ -24,8 +24,9 @@ _PROJECT_ROOT = Path(__file__).resolve().parent.parent
 # 优先从 ClinSkills plugin 的 skills/ 目录查找 _compat——适用于 harness 源码仓库自身
 # 或已安装 plugin 的临床项目。
 # 下游临床项目若无 plugin 目录，则从 utils/ 同级查找（_compat.py 需随 utils/ 一并部署：
-# 由 build-metadata Step 2c 或 plugin 安装脚本负责）。
+# 由 init-project Step 2c 或 plugin 安装脚本负责）。
 _COMPAT_CANDIDATES = [
+    _PROJECT_ROOT / "skills" / "init-project" / "reference" / "skeleton" / "utils",
     _PROJECT_ROOT / "skills" / "build-metadata" / "scripts",
     _PROJECT_ROOT / "utils",
 ]

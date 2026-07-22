@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # ClinSkills utils 工具层部署（legacy）
 #   推荐使用 Plugin Marketplace 安装：claude plugin install clin-skills
-#   本脚本仅部署 utils/ 到全局 ~/.claude/skills/build-metadata/reference/skeleton/utils/
-#   供 build-metadata skill 脚手架进临床项目。插件本身通过 marketplace 或 --plugin-dir 加载。
+#   本脚本仅部署 utils/ 到全局 ~/.claude/skills/init-project/reference/skeleton/utils/
+#   供 init-project skill 脚手架进临床项目。插件本身通过 marketplace 或 --plugin-dir 加载。
 # 依赖：git、python3。
 #   curl -fsSL https://raw.githubusercontent.com/Doraemon-code/ClinSkills/master/install.sh | bash
 
@@ -22,13 +22,13 @@ tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
 git clone --depth 1 --branch "$branch" "$repo" "$tmp" >/dev/null 2>&1
 
-# 部署 utils/ 到 build-metadata skeleton，供脚手架进各临床项目
-skel_utils="$claude_dir/skills/build-metadata/reference/skeleton/utils"
+# 部署 utils/ 到 init-project skeleton，供脚手架进各临床项目
+skel_utils="$claude_dir/skills/init-project/reference/skeleton/utils"
 if [ -d "$tmp/utils" ]; then
-  if [ -d "$claude_dir/skills/build-metadata" ]; then
+  if [ -d "$claude_dir/skills/init-project" ]; then
     rm -rf "$skel_utils"; mkdir -p "$(dirname "$skel_utils")"
     cp -R "$tmp/utils" "$skel_utils"
-    echo "  + build-metadata/reference/skeleton/utils （供项目脚手架）"
+    echo "  + init-project/reference/skeleton/utils （供项目脚手架）"
   fi
 fi
 

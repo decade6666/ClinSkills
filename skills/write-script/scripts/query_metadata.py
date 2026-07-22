@@ -45,7 +45,7 @@ METADATA_DIR = _resolve_metadata_dir()
 def _load(name):
     p = METADATA_DIR / f"{name}.json"
     if not p.exists():
-        print(f"错误: 找不到 {p}，请先运行 build-metadata 生成元数据。")
+        print(f"错误: 找不到 {p}，请先运行 build-metadata 或 init-project 生成元数据。")
         sys.exit(1)
     with open(p, encoding="utf-8") as f:
         return json.load(f)
