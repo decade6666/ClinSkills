@@ -1,8 +1,8 @@
 #!/usr/bin/env pwsh
 # ClinSkills utils 工具层部署（legacy）
 #   推荐使用 Plugin Marketplace 安装：claude plugin install clin-skills
-#   本脚本仅部署 utils/ 到全局 ~/.claude/skills/build-metadata/reference/skeleton/utils/
-#   供 build-metadata skill 脚手架进临床项目。插件本身通过 marketplace 或 --plugin-dir 加载。
+#   本脚本仅部署 utils/ 到全局 ~/.claude/skills/init-project/reference/skeleton/utils/
+#   供 init-project skill 脚手架进临床项目。插件本身通过 marketplace 或 --plugin-dir 加载。
 # 依赖：git、python（在 PATH 上）。
 #   irm https://raw.githubusercontent.com/Doraemon-code/ClinSkills/master/install.ps1 | iex
 
@@ -25,14 +25,14 @@ git clone --depth 1 --branch $branch $repo $tmp 2>&1 | Out-Null
 if ($LASTEXITCODE -ne 0) { Write-Error "git clone 失败：$repo"; return }
 
 try {
-    # 部署 utils/ 到 build-metadata skeleton，供脚手架进各临床项目
+    # 部署 utils/ 到 init-project skeleton，供脚手架进各临床项目
     $srcUtils = Join-Path $tmp 'utils'
-    $skelUtils = Join-Path $claudeDir 'skills/build-metadata/reference/skeleton/utils'
+    $skelUtils = Join-Path $claudeDir 'skills/init-project/reference/skeleton/utils'
     if (Test-Path $srcUtils) {
         if (Test-Path $skelUtils) { Remove-Item -Recurse -Force $skelUtils }
         New-Item -ItemType Directory -Force -Path (Split-Path $skelUtils) | Out-Null
         Copy-Item -Recurse -Force -Path $srcUtils -Destination $skelUtils
-        Write-Host "  + build-metadata/reference/skeleton/utils （供项目脚手架）" -ForegroundColor Green
+        Write-Host "  + init-project/reference/skeleton/utils （供项目脚手架）" -ForegroundColor Green
     }
 
     Write-Host ""

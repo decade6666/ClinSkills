@@ -12,8 +12,8 @@ try:
     from config import raw_path
 except ImportError:
     sys.exit(
-        "缺少 config.py。请先运行 build-metadata 初始化项目结构，"
-        "或参考 skills/build-metadata/reference/skeleton/config.py.template 创建。"
+        "缺少 config.py。请先运行 init-project 初始化项目结构，"
+        "或参考 skills/init-project/reference/skeleton/config.py.template 创建。"
     )
 from pathlib import Path
 from typing import overload
@@ -24,8 +24,9 @@ _PROJECT_ROOT = Path(__file__).resolve().parent.parent
 # 优先从 ClinSkills plugin 的 skills/ 目录查找 _compat——适用于 harness 源码仓库自身
 # 或已安装 plugin 的临床项目。
 # 下游临床项目若无 plugin 目录，则从 utils/ 同级查找（_compat.py 需随 utils/ 一并部署：
-# 由 build-metadata Step 2c 或 plugin 安装脚本负责）。
+# 由 init-project Step 2c 或 plugin 安装脚本负责）。
 _COMPAT_CANDIDATES = [
+    _PROJECT_ROOT / "skills" / "init-project" / "reference" / "skeleton" / "utils",
     _PROJECT_ROOT / "skills" / "build-metadata" / "scripts",
     _PROJECT_ROOT / "utils",
 ]
@@ -161,6 +162,16 @@ SYSTEM_COLUMNS: dict[str, dict[str, str]] = {
     },
 }
 
+# 额外强制 str 读取的 ID 列（保留前导零）——subject 已单独处理，不在此重复。
+# 值为该 EDC 中随机号/编号等 ID 列的实际列名（字段标签或 SAS 名）；命不中的项目
+# 须在此补本项目的实际列名，否则该列前导零会被 pandas 静默转为整数丢失。
+ID_COLUMNS: dict[str, list[str]] = {
+    "clinflash": ["随机号"],
+    "taimei5":   ["随机号"],
+    "taimei6":   ["随机号"],
+    "cmis":      [],  # cmis 用 SAS 名，随机号列名随项目而定，命中后在此补
+}
+
 
 @overload
 def system_cols(role: None = None) -> dict: ...
@@ -230,12 +241,13 @@ def load_sheet(
         DataFrame
     """
     sheet = _resolve_sheet_name(form_oid, form_name)
-    # 受试者(筛选号)、随机号为 ID 编码，强制 str 读取以保留前导零；
+    # 受试者(筛选号)与随机号/编号等 ID 列为编码，强制 str 读取以保留前导零；
     # pandas 会忽略 sheet 中不存在的 dtype 键，故对所有 sheet 传入无副作用。
-    # 注：此处硬编码的"随机号"是字段标签字面量，仅命中标签恰为"随机号"的表头（clinflash/taimei 常见）；
-    #     cmis（用 SAS 名）或英文标签项目命不中，其随机号列需 caller 显式传 dtype 强制 str。
-    # caller 显式传入的 dtype 优先（dict 合并覆盖，或整体替换）。
-    id_dtype = {system_cols("subject"): str, "随机号": str}
+    # ID 列取自 ID_COLUMNS 注册表（按 EDC 配置，复用者查注册表即可见需改处）；
+    # subject 单独强制 str。caller 显式传入的 dtype 优先（dict 合并覆盖，或整体替换）。
+    id_dtype = {system_cols("subject"): str}
+    for _id_col in ID_COLUMNS.get(EDC_TYPE, []):
+        id_dtype[_id_col] = str
     if isinstance(dtype, dict):
         eff_dtype = {**id_dtype, **dtype}
     elif dtype is not None:

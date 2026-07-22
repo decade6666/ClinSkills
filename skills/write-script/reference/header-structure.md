@@ -2,7 +2,7 @@
 
 源数据表头结构（`header` / `skiprows`）与列名类型（字段标签 or SAS 变量名）的判定表——
 表头规则的**权威表述**。仅在 `CLAUDE.md` 尚未记录表头约定时（write-script Step 0 /
-build-metadata Step 2b）需要；确定后写回 `CLAUDE.md`，后续脚本不再查此表。
+init-project Step 2b）需要；确定后写回 `CLAUDE.md`，后续脚本不再查此表。
 
 ## 两种字段名
 
@@ -39,5 +39,5 @@ EDC 导出把二者分行放，脚本读取用哪一种、跳过哪一行，由 
 - 表头结构：`header=0, skiprows=[1]`（第 1 行 SAS 变量名，第 2 行字段标签被跳过）
 ```
 
-> build-metadata Step 2b 用 `<!-- EDC_TYPE_HEADER_START/END -->` 区块承载此约定行，
+> init-project Step 2b 用 `<!-- EDC_TYPE_HEADER_START/END -->` 区块承载此约定行，
 > 复制 `CLAUDE.md.template` 后按 Step 1 选定的 EDC 类型替换为上表对应行。

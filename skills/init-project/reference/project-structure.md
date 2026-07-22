@@ -1,7 +1,7 @@
 # 标准项目目录结构
 
 本文件是临床试验数据审核报告项目的标准目录结构。
-`build-metadata` skill 的 Step 1 以此为基准校验项目目录，如有偏离则自动修正。
+`init-project` skill 的 Step 2 以此为基准校验项目目录，如有偏离则自动修正。
 
 ## 目录树
 
@@ -52,7 +52,7 @@
 | `requirements.txt` | `skeleton/requirements.txt.template` | Python 依赖 |
 
 > 模板一律用 `.template` 后缀，避免 `.gitignore` / `config.py` 等在本目录被 git 或工具当作生效文件。
-> **工具层 `utils/`**（不走根 `.template`）：由 build-metadata Step 2c 从 `skeleton/utils/`（plugin 安装时由安装脚本置入）部署到项目根；源码仓库自身开发时根 `utils/` 已存在，跳过。raw 数据保护与语法检查 hook 随 ClinSkills plugin 加载（通过 `hooks/hooks.json` 声明），项目不再自带 `.claude/hooks/`。
+> **工具层 `utils/`**（不走根 `.template`）：由 init-project Step 2c 从 `skeleton/utils/`（plugin 安装时由安装脚本置入）部署到项目根；源码仓库自身开发时根 `utils/` 已存在，跳过。raw 数据保护与语法检查 hook 随 ClinSkills plugin 加载（通过 `hooks/hooks.json` 声明），项目不再自带 `.claude/hooks/`。
 
 ## 目录重命名时的路径同步清单
 
@@ -66,9 +66,9 @@
 | `scripts/syntax_check.py` | `parts[0]` 检查 + docstring（Claude Code 兼容） |
 | `scripts/raw_read_guard.py` | `_under_dir()` 参数 + docstring（Claude Code 兼容） |
 | `skills/write-script/SKILL.md` | 验证命令路径 |
-| `skills/build-metadata/SKILL.md` | `metadata/` 路径描述 |
+| `skills/init-project/SKILL.md` | `metadata/` 路径描述 |
 | `skills/write-script/scripts/query_metadata.py` | `_resolve_metadata_dir()` 默认路径 |
-| `skills/build-metadata/reference/skeleton/*.template` | `config.yaml` / `gitignore` / `CLAUDE.md` 模板中的目录路径 |
+| `skills/init-project/reference/skeleton/*.template` | `config.yaml` / `gitignore` / `CLAUDE.md` 模板中的目录路径 |
 | `.gitignore` | `rawdata/` / `output/` 规则 |
 | `skills/write-script/reference/coding-guide.md` | `04 scripts/` 引用 |
-| `skills/build-metadata/reference/project-structure.md` | 目录树 + sync checklist 自身 |
+| `skills/init-project/reference/project-structure.md` | 目录树 + sync checklist 自身 |

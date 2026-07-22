@@ -1,6 +1,6 @@
 # ClinSkills
 
-临床试验数据审核（DMR）报告的 Claude Code **Plugin**：EDC 元数据解析、数据核查脚本编写、改动审查、harness 审计、skill 编写。
+临床试验数据审核（DMR）报告的 Claude Code **Plugin**：项目脚手架、EDC 元数据解析、数据核查脚本编写。
 
 ## 安装
 
@@ -39,19 +39,19 @@ irm https://raw.githubusercontent.com/Doraemon-code/ClinSkills/master/install.ps
 curl -fsSL https://raw.githubusercontent.com/Doraemon-code/ClinSkills/master/install.sh | bash
 ```
 
-> 此方式仅部署 `utils/` 工具层到全局 `~/.claude/`（供 build-metadata 脚手架到临床项目），不注册 plugin。推荐方式一。
+> 此方式仅部署 `utils/` 工具层到全局 `~/.claude/`（供 init-project 脚手架到临床项目），不注册 plugin。推荐方式一。
 
 ## 包含内容
 
 | 类型 | 名称 | 说明 |
 |---|---|---|
-| Skills | `build-metadata`、`write-script`、`review-changes` | 通过 `/clin-skills:skill-name` 调用 |
+| Skills | `init-project`、`build-metadata`、`write-script`、`review-changes` | 通过 `/clin-skills:skill-name` 调用 |
 | Agents | `metadata-explorer`、`python-reviewer` | 通过 Agent 工具 subagent_type 调用 |
 | Hooks | `syntax_check`、`raw_read_guard` | 随 plugin 加载自动注册 |
 
 ## 用法
 
-- **新临床项目**：进入项目目录，触发 `/clin-skills:build-metadata`——校验/脚手架目录结构、解析 EDC 元数据为 JSON。
+- **新临床项目**：进入项目目录，先触发 `/clin-skills:init-project` 搭项目骨架，再触发 `/clin-skills:build-metadata` 解析 EDC 元数据为 JSON。
 - **写核查脚本**：`/clin-skills:write-script`（口述需求或给输出示例）。
 - **提交前审查**：`/clin-skills:review-changes`。
 
@@ -65,5 +65,5 @@ claude plugin uninstall clin-skills
 
 ## 设计说明
 
-- **Plugin 分发**：skills / agents / hooks 打包为 Claude Code Plugin，通过 marketplace 或本地目录安装；`utils/`（`loaders` 读取 + `output_docx`·`output_xlsx` 输出层）随插件分发，由 `build-metadata` skill 脚手架进目标临床项目。
+- **Plugin 分发**：skills / agents / hooks 打包为 Claude Code Plugin，通过 marketplace 或本地目录安装；`utils/`（`loaders` 读取 + `output_docx`·`output_xlsx` 输出层）随插件分发，由 `init-project` skill 脚手架进目标临床项目。
 - **全局安全**：`raw_read_guard` hook 只在命令**确切指向 raw** 时才拦，非临床项目不受影响；`syntax_check` 只作用于 `04 scripts/` 与 `utils/`。两者通过 `hooks/hooks.json` 声明，随 plugin 加载自动注册。
