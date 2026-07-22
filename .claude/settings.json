@@ -3,6 +3,8 @@
     "deny": [
       "Read(01 rawdata/**)",
       "Grep(01 rawdata/**)",
+      "Read(03 output/**)",
+      "Grep(03 output/**)",
       "Edit(**/*.ipynb)",
       "Write(**/*.ipynb)",
       "NotebookEdit(**/*.ipynb)"
@@ -35,7 +37,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python \"$CLAUDE_PROJECT_DIR/.claude/hooks/raw_read_guard.py\""
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/raw_read_guard.py\""
           }
         ]
       }
@@ -46,7 +48,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python \"$CLAUDE_PROJECT_DIR/.claude/hooks/syntax_check.py\""
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/syntax_check.py\""
           }
         ]
       }

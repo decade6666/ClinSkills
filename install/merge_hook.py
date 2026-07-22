@@ -1,9 +1,9 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """幂等地把全局 harness 配置合并进用户级 settings.json。
 
-由 install.ps1 / install.sh 调用：`python merge_hook.py <claude_dir>`。
-注册两个 hook（syntax_check / raw_read_guard）+ raw 数据 deny 权限；已存在则跳过/升级。
-三者均全局安全（raw_read_guard 只在命令确切指向 raw 时才拦），故可放入用户级、跨项目生效——
+由 install.ps1 / install.sh 调用：`python3 merge_hook.py <claude_dir>`。
+注册两个 hook（syntax_check / raw_read_guard）+ raw/output deny 权限；已存在则跳过/升级。
+二者均全局安全（raw_read_guard 只在命令确切指向 raw 时才拦），故可放入用户级、跨项目生效——
 项目无需自带 `.claude/`。只增不删（matcher 升级除外），保留其它已有配置。
 """
 import json
@@ -15,6 +15,8 @@ _RAW_GUARD_MATCHER = "Bash|Read|PowerShell|Grep"
 _RAW_DENY_RULES = (
     "Read(01 rawdata/**)",
     "Grep(01 rawdata/**)",
+    "Read(03 output/**)",
+    "Grep(03 output/**)",
 )
 
 
@@ -41,7 +43,7 @@ def _upgrade_raw_guard_matcher(pre_entries) -> bool:
 
 def main() -> int:
     if len(sys.argv) < 2:
-        print("用法: python merge_hook.py <claude_dir>", file=sys.stderr)
+        print("用法: python3 merge_hook.py <claude_dir>", file=sys.stderr)
         return 1
     claude_dir = Path(sys.argv[1])
     settings_path = claude_dir / "settings.json"
@@ -88,7 +90,7 @@ def main() -> int:
         changed = True
         print(f"  ✓ 升级 raw_read_guard matcher → {_RAW_GUARD_MATCHER}")
 
-    # 3) permissions.deny: 硬拦 Read/Grep 直读 rawdata（非临床项目无此目录、无副作用）
+    # 3) permissions.deny: 硬拦 Read/Grep 直读 rawdata 与 output 回读
     perms = settings.setdefault("permissions", {})
     deny = perms.setdefault("deny", [])
     for rule in _RAW_DENY_RULES:
