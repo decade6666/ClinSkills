@@ -2,6 +2,7 @@
   "permissions": {
     "deny": [
       "Read(01 rawdata/**)",
+      "Grep(01 rawdata/**)",
       "Edit(**/*.ipynb)",
       "Write(**/*.ipynb)",
       "NotebookEdit(**/*.ipynb)"
@@ -30,7 +31,7 @@
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "Bash|Read|PowerShell",
+        "matcher": "Bash|Read|PowerShell|Grep",
         "hooks": [
           {
             "type": "command",

@@ -2,13 +2,20 @@
 """幂等地把全局 harness 配置合并进用户级 settings.json。
 
 由 install.ps1 / install.sh 调用：`python merge_hook.py <claude_dir>`。
-注册两个 hook（syntax_check / raw_read_guard）+ raw 数据 deny 权限；已存在则跳过。
+注册两个 hook（syntax_check / raw_read_guard）+ raw 数据 deny 权限；已存在则跳过/升级。
 三者均全局安全（raw_read_guard 只在命令确切指向 raw 时才拦），故可放入用户级、跨项目生效——
-项目无需自带 `.claude/`。只增不删，保留其它已有配置。
+项目无需自带 `.claude/`。只增不删（matcher 升级除外），保留其它已有配置。
 """
 import json
 import sys
 from pathlib import Path
+
+# raw_read_guard 覆盖的工具集；已安装的旧 matcher 会被幂等升级到此值。
+_RAW_GUARD_MATCHER = "Bash|Read|PowerShell|Grep"
+_RAW_DENY_RULES = (
+    "Read(01 rawdata/**)",
+    "Grep(01 rawdata/**)",
+)
 
 
 def _has_hook(entries, needle):
@@ -17,6 +24,19 @@ def _has_hook(entries, needle):
             if needle in (h.get("command") or ""):
                 return True
     return False
+
+
+def _upgrade_raw_guard_matcher(pre_entries) -> bool:
+    """若已注册 raw_read_guard 但 matcher 缺 Grep，则升级 matcher。返回是否改动。"""
+    changed = False
+    for m in pre_entries:
+        for h in m.get("hooks", []):
+            if "raw_read_guard.py" not in (h.get("command") or ""):
+                continue
+            if m.get("matcher") != _RAW_GUARD_MATCHER:
+                m["matcher"] = _RAW_GUARD_MATCHER
+                changed = True
+    return changed
 
 
 def main() -> int:
@@ -58,21 +78,24 @@ def main() -> int:
     pre = hooks.setdefault("PreToolUse", [])
     if not _has_hook(pre, "raw_read_guard.py"):
         pre.append({
-            "matcher": "Bash|Read|PowerShell",
+            "matcher": _RAW_GUARD_MATCHER,
             "hooks": [{"type": "command",
                        "command": f'"{sys.executable}" "{hooks_dir / "raw_read_guard.py"}"'}],
         })
         changed = True
         print("  ✓ 注册 raw_read_guard (PreToolUse)")
+    elif _upgrade_raw_guard_matcher(pre):
+        changed = True
+        print(f"  ✓ 升级 raw_read_guard matcher → {_RAW_GUARD_MATCHER}")
 
-    # 3) permissions.deny: 硬拦 Read 工具直读 rawdata（非临床项目无此目录、无副作用）
+    # 3) permissions.deny: 硬拦 Read/Grep 直读 rawdata（非临床项目无此目录、无副作用）
     perms = settings.setdefault("permissions", {})
     deny = perms.setdefault("deny", [])
-    rule = "Read(01 rawdata/**)"
-    if rule not in deny:
-        deny.append(rule)
-        changed = True
-        print("  ✓ 添加 deny Read(01 rawdata/**)")
+    for rule in _RAW_DENY_RULES:
+        if rule not in deny:
+            deny.append(rule)
+            changed = True
+            print(f"  ✓ 添加 deny {rule}")
 
     if changed:
         settings_path.write_text(
