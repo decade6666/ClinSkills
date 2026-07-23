@@ -26,6 +26,13 @@ config.yaml
 config.py
 requirements.txt
 
-# Local Trellis workflow state (tasks/runtime; not product code)
-# Keep on this fork only — do NOT open upstream PR for this ignore rule.
+# Local Trellis workflow tooling (fork-only; not ClinSkills plugin product)
+# Keep on this fork only — do NOT open upstream PR for these ignore rules.
 .trellis/
+AGENTS.md
+.claude/agents/trellis-*.md
+.claude/commands/trellis/
+.claude/hooks/inject-subagent-context.py
+.claude/hooks/inject-workflow-state.py
+.claude/hooks/session-start.py
+.claude/skills/trellis-*/
