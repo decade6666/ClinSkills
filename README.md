@@ -20,9 +20,8 @@ claude plugin install clin-skills
 # 克隆仓库
 git clone https://github.com/Doraemon-code/ClinSkills.git
 
-# 本地安装
-claude plugin install ./ClinSkills
-# 或开发模式：claude --plugin-dir ./ClinSkills
+# 本地加载（开发 / 离线）
+claude --plugin-dir ./ClinSkills
 ```
 
 ### 方式三：全局一键安装（legacy）
@@ -65,5 +64,5 @@ claude plugin uninstall clin-skills
 
 ## 设计说明
 
-- **Plugin 分发**：skills / agents / hooks 打包为 Claude Code Plugin，通过 marketplace 或本地目录安装；`utils/`（`loaders` 读取 + `output_docx`·`output_xlsx` 输出层）随插件分发，由 `init-project` skill 脚手架进目标临床项目。
+- **Plugin 分发**：skills / agents / hooks 打包为 Claude Code Plugin，可通过 marketplace 安装，或通过本地目录加载；`utils/`（`loaders` 读取 + `output_docx`·`output_xlsx` 输出层）随插件分发，由 `init-project` skill 脚手架进目标临床项目。
 - **全局安全**：`raw_read_guard` hook 只在命令**确切指向 raw** 时才拦，非临床项目不受影响；`syntax_check` 只作用于 `04 scripts/` 与 `utils/`。两者通过 `hooks/hooks.json` 声明，随 plugin 加载自动注册。
