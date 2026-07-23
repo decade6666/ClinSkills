@@ -46,7 +46,7 @@ curl -fsSL https://raw.githubusercontent.com/Doraemon-code/ClinSkills/master/ins
 | 类型 | 名称 | 说明 |
 |---|---|---|
 | Skills | `init-project`、`build-metadata`、`write-script`、`review-changes` | 通过 `/clin-skills:skill-name` 调用 |
-| Agents | `metadata-explorer`、`python-reviewer` | 通过 Agent 工具 subagent_type 调用 |
+| Agents | `clin-skills:metadata-explorer`、`clin-skills:python-reviewer` | 通过 Agent 工具 subagent_type 调用（**必须带 `clin-skills:` 前缀**） |
 | Hooks | `syntax_check`、`raw_read_guard` | 随 plugin 加载自动注册 |
 
 ## 用法
