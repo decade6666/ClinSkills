@@ -16,7 +16,7 @@ if _project_root not in sys.path:
     sys.path.insert(0, _project_root)
 
 import pandas as pd
-from config import output_path
+from config import output_listing_dir
 from utils.output_format import export_to_one_excel_with_format
 from utils.loaders import load_sheet, system_cols
 
@@ -262,11 +262,11 @@ title_text = f"{title}（{len(df_out)}条）"
 if len(df_out) > 0:
     export_to_one_excel_with_format(
         df_out,
-        f"{output_path}/listing/{title}.xlsx",
+        f"{output_listing_dir}/{title}.xlsx",
         title,
         title_text,
         add_title=True,
     )
-    print(f"输出文件: {output_path}/listing/{title}.xlsx")
+    print(f"输出文件: {output_listing_dir}/{title}.xlsx")
 else:
     print("所有动态链接数据关联正确，无异常记录。")

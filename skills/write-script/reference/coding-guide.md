@@ -29,13 +29,13 @@ if _project_root not in sys.path:
 
 import pandas as pd
 import numpy as np
-from config import output_path
+from config import output_table_dir, output_listing_dir
 from utils.output_format import save_table_to_docx_threeline, export_to_one_excel_with_format
 from utils.loaders import load_sheet
 ```
 
 - `pd`、`np` 直接 import，不经过任何中间模块
-- `output_path` 等路径变量从 `config.py` 导入
+- `output_table_dir` / `output_listing_dir` 等路径变量从 `config.py` 导入
 - 报表函数从 `utils.output_format` 按需导入（`save_table_to_docx_threeline`、`export_to_one_excel_with_format`）
 - 数据读取统一走 `utils/loaders.py` 的 `load_sheet`，不直接调用 `pd.read_excel`
 - 禁止使用 `# %%` Jupyter cell 标记
@@ -201,7 +201,7 @@ df_out = df_out.rename(columns={
 notes = ["脚注1", "脚注2"]
 save_table_to_docx_threeline(
     df_out,
-    f'{output_path}/table/表X 标题.docx',
+    f'{output_table_dir}/表X 标题.docx',
     '表X 标题',
     notes,
     row_height_cm=0.6,
@@ -213,15 +213,15 @@ save_table_to_docx_threeline(
 ```python
 export_to_one_excel_with_format(
     df_out,
-    f"{output_path}/listing/表X 标题.xlsx",
+    f"{output_listing_dir}/表X 标题.xlsx",
     "表X 标题",
     f"表X 标题（{n}例）",
     add_title=True,
 )
 ```
 
-- 文件路径用 f-string 拼接 `output_path`，不硬编码绝对路径
-- 表格输出到 `output_path/table/`，清单输出到 `output_path/listing/`
+- 文件路径用 f-string 拼接 `output_table_dir` / `output_listing_dir`，不硬编码绝对路径
+- `output_table_dir` / `output_listing_dir` 从 `config.py` 导入，由 `config.py` 自动裁决子目录
 - **docx 三线表命名**：`表格NN-标题.docx`，如 `表格01-知情同意书签署日期汇总.docx`
 - **xlsx 清单命名**：`清单NN-标题.xlsx`，如 `清单01-筛选号与知情同意书签署日期矛盾核查.xlsx`
 - NN 为两位数字序号，按脚本在章节内的编号递增

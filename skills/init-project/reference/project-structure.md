@@ -60,7 +60,7 @@
 
 | 文件 | 引用内容 |
 |------|---------|
-| `config.yaml` | `raw_path` / `pd_path` / `code_path` / `remark_path` / `timewin_path` / `output_path` |
+| `config.yaml` | `raw_path` / `pd_path` / `code_path` / `remark_path` / `timewin_path` / `output_path`；output 日期由 `config.py` 从 `raw_path` 自动提取 |
 | `CLAUDE.md` | 目录树、Permissions 节 |
 | `.claude/settings.json` | permission deny / allow 规则 |
 | `scripts/syntax_check.py` | `parts[0]` 检查 + docstring（Claude Code 兼容） |

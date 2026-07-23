@@ -8,4 +8,5 @@ path:
   code_path: "01 rawdata/<日期>/<医学编码报告>.xlsx"
   remark_path: "01 rawdata/<日期>/<备注明细>.xlsx"
   timewin_path: "01 rawdata/<日期>/<时间窗>.xlsx"
-  output_path: "03 output/<日期>"
+  # output 日期由 config.py 自动从 raw_path 提取并保持一致；此处只写根目录。
+  output_path: "03 output"

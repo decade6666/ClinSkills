@@ -23,13 +23,32 @@ tools:
 
 ## 工作流程
 
-### 1. 读取审查清单
+### 1. 定位插件根并读取审查清单
 
-清单文件在插件 `skills/write-script/reference/review-checklist.md`，使用 `$CLAUDE_PLUGIN_ROOT` 定位（Read 工具不展开变量，须先解析为绝对路径——PowerShell 取 `$env:CLAUDE_PLUGIN_ROOT`——再读）：
+清单文件在 `skills/write-script/reference/review-checklist.md`。`CLAUDE_PLUGIN_ROOT` 是一个
+在 PowerShell 下必须写成 `$env:CLAUDE_PLUGIN_ROOT` 才能展开的环境变量，Read 工具不展开任何
+变量，因此**必须先解析为绝对路径再传入 Read**。
+
+**解析流程（每次审查第一步，不可跳过）：**
 
 ```bash
-Read "$CLAUDE_PLUGIN_ROOT/skills/write-script/reference/review-checklist.md"
+# 通过 PowerShell 获取插件根（plugin-enabled session 会注入此变量）。
+# 若变量为空，回退到本仓库的已知路径（本仓库自身开发时成立）：
+plugin_root="$(pwsh -NoProfile -Command '$env:CLAUDE_PLUGIN_ROOT')"
+if [ -z "$plugin_root" ]; then
+  plugin_root="/c/Users/Administrator/.claude/plugins/marketplaces/clin-skills-marketplace"
+fi
+echo "$plugin_root"
 ```
+
+确认输出非空后，再用拼接的绝对路径读取：
+
+```bash
+Read "${plugin_root}/skills/write-script/reference/review-checklist.md"
+```
+
+**fallback 说明**：上面硬编码的路径是插件源码在本地磁盘的位置。如果你发现该路径不存在，
+用 Glob 在整个 `$HOME/.claude/plugins/` 下搜索 `review-checklist.md` 定位实际路径。
 
 清单分三级：**致命项**（运行时/数据错误）、**重要项**（违反编码规范）、**建议项**（可维护性）。
 
@@ -51,6 +70,7 @@ Read "$CLAUDE_PLUGIN_ROOT/skills/write-script/reference/review-checklist.md"
 - 是否有直接读取 `01 rawdata/` 的代码（`pd.read_excel` / `openpyxl`）
 - 解码后缀是否硬编码（`_TXT` / `_DEC`）
 - clinflash 项目列名格式是否为 `{itemName}({fieldOID})`
+- 输出路径是否使用了 `config.py` 的 `output_table_dir` / `output_listing_dir`，而非绕过它们直接用 `output_path` 拼接或硬编码绝对路径（这两个变量由 `config.py` 自动保证日期一致）
 
 **重要项（结合上下文判断）：**
 - `IMPORT_*` / `VAR_*` / `OUTPUT_COLS` 三区边界
@@ -58,10 +78,10 @@ Read "$CLAUDE_PLUGIN_ROOT/skills/write-script/reference/review-checklist.md"
 - 变量命名前缀（`df_` / `VAR_` / `IMPORT_`）
 - 输出列名是否还原中文
 - 文件头路径引导块（`sys.path.insert`）
-- 导入来源（`from config import output_path` / `from utils import ...`）
+- 导入来源（`from config import output_table_dir, output_listing_dir` / `from utils import ...`）
 
 **建议项（快速扫描）：**
-- 输出路径是否用 `output_path` 拼接
+- 输出路径是否用 `output_table_dir` / `output_listing_dir` 拼接
 - 门控字段（hasOther/CMYN/MHYN）是否排除"否"记录
 - 日期格式化位置（集中在步骤 7）
 - 文件命名规范（`表格NN-标题.docx`）
