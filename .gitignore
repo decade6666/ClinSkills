@@ -25,3 +25,7 @@ Thumbs.db
 config.yaml
 config.py
 requirements.txt
+
+# Local Trellis workflow state (tasks/runtime; not product code)
+# Keep on this fork only — do NOT open upstream PR for this ignore rule.
+.trellis/
