@@ -11,32 +11,32 @@ from openpyxl.utils import get_column_letter
 from openpyxl.styles import Alignment, Font, PatternFill, Border, Side
 
 
-def _char_width(ch):
-    """估算单个字符在 Excel 中的列宽。CJK 字符约占 2 单位，其余占 1 单位。"""
-    code = ord(ch)
-    if (0x4E00 <= code <= 0x9FFF or 0x3400 <= code <= 0x4DBF
-            or 0xF900 <= code <= 0xFAFF or 0x2E80 <= code <= 0x2FDF
-            or 0x3000 <= code <= 0x303F or 0xFF01 <= code <= 0xFF60
-            or 0xFE30 <= code <= 0xFE4F or 0x2000 <= code <= 0x206F):
-        return 2.0
-    return 1.0
+def _str_width(s):
+    """估算字符串在 Excel 中的显示宽度。CJK 字符计 2 单位，其余计 1。"""
+    w = 0.0
+    for ch in str(s):
+        code = ord(ch)
+        if (0x3400 <= code <= 0x4DBF
+                or 0x4E00 <= code <= 0x9FFF
+                or 0xF900 <= code <= 0xFAFF
+                or 0x2E80 <= code <= 0x2FDF
+                or 0x3000 <= code <= 0x303F
+                or 0xFF01 <= code <= 0xFF60
+                or 0xFE30 <= code <= 0xFE4F
+                or 0x2000 <= code <= 0x206F):
+            w += 2.0
+        else:
+            w += 1.0
+    return w
 
 
-def _col_widths(df):
-    """计算 DataFrame 各列自适应宽度（基于前 100 行采样）。"""
-    sample = df.head(100)
-    widths = []
-    for c in df.columns:
-        header_w = sum(_char_width(ch) for ch in str(c))
-        max_w = header_w
-        for val in sample[c]:
-            if pd.isna(val):
-                continue
-            w = sum(_char_width(ch) for ch in str(val))
-            if w > max_w:
-                max_w = w
-        widths.append(min(max_w + 2, 60))
-    return widths
+def _apply_col_widths(ws, col_widths):
+    """将预计算的列宽写入 worksheet。openpyxl 用 column_dimensions，xlsxwriter 用 set_column。"""
+    for c, width in enumerate(col_widths):
+        try:
+            ws.set_column(c, c, width)
+        except AttributeError:
+            ws.column_dimensions[get_column_letter(c + 1)].width = width
 
 
 def _sanitize_sheet_name(name: str) -> str:
@@ -54,8 +54,10 @@ def export_to_excel_with_format(df, output_path, sheet_name, title_name, add_tit
     num_rows = df.shape[0]
     header_row = 1 if add_title else 0
     data_start_row = header_row + 1
-    col_widths_list = _col_widths(df)
     text_cols = {i for i, c in enumerate(df.columns) if df[c].dtype == object}
+
+    # 初始化列宽（表头）
+    col_widths = [_str_width(c) for c in df.columns]
 
     output_dir = os.path.dirname(output_path)
     if output_dir:
@@ -86,24 +88,21 @@ def export_to_excel_with_format(df, output_path, sheet_name, title_name, add_tit
         if add_title:
             worksheet.merge_range(0, 0, 0, num_cols - 1, title_name, fmt_title)
 
-        # 表头
         for c, col_name in enumerate(df.columns):
             worksheet.write(header_row, c, col_name, fmt_header)
 
-        # 数据
         for r in range(num_rows):
             for c in range(num_cols):
                 val = df.iloc[r, c]
                 if pd.isna(val):
                     val = ''
+                else:
+                    col_widths[c] = max(col_widths[c], _str_width(val))
                 fmt = fmt_text if c in text_cols else fmt_data
                 worksheet.write(data_start_row + r, c, val, fmt)
 
-        # 列宽
-        for c, width in enumerate(col_widths_list):
-            worksheet.set_column(c, c, width)
+        _apply_col_widths(worksheet, [min(w + 2, 60) for w in col_widths])
 
-        # 筛选
         if num_rows > 0:
             worksheet.autofilter(header_row, 0, data_start_row + num_rows - 1, num_cols - 1)
 
@@ -131,10 +130,9 @@ def export_to_one_excel_with_format(df, output_path, sheet_name, title_name=None
 
     num_cols = df.shape[1]
     rows, cols = df.shape
-    col_widths_list = _col_widths(df)
     text_cols = {i for i, c in enumerate(df.columns) if df[c].dtype == object}
+    col_widths = [_str_width(c) for c in df.columns]
 
-    # 样式
     header_font = Font(bold=True, size=10)
     header_fill = PatternFill(start_color="D3D3D3", end_color="D3D3D3", fill_type="solid")
     header_alignment = Alignment(horizontal="center", vertical="center")
@@ -147,7 +145,6 @@ def export_to_one_excel_with_format(df, output_path, sheet_name, title_name=None
         top=Side(border_style="thin"), bottom=Side(border_style="thin"),
     )
 
-    # 大标题
     header_row = 2 if add_title else 1
     if add_title and title_name:
         worksheet.merge_cells(start_row=1, start_column=1, end_row=1, end_column=num_cols)
@@ -155,7 +152,6 @@ def export_to_one_excel_with_format(df, output_path, sheet_name, title_name=None
         worksheet["A1"].font = title_font
         worksheet["A1"].alignment = title_alignment
 
-    # 表头
     for c, col_name in enumerate(df.columns):
         cell = worksheet.cell(row=header_row, column=c + 1)
         cell.value = col_name
@@ -163,13 +159,14 @@ def export_to_one_excel_with_format(df, output_path, sheet_name, title_name=None
         cell.fill = header_fill
         cell.alignment = header_alignment
 
-    # 数据
     data_start = header_row + 1
     for r in range(rows):
         for c in range(cols):
             val = df.iloc[r, c]
             if pd.isna(val):
                 val = ""
+            else:
+                col_widths[c] = max(col_widths[c], _str_width(val))
             cell = worksheet.cell(row=data_start + r, column=c + 1)
             cell.value = val
             cell.font = data_font
@@ -178,11 +175,8 @@ def export_to_one_excel_with_format(df, output_path, sheet_name, title_name=None
             if c in text_cols:
                 cell.number_format = '@'
 
-    # 列宽
-    for c, width in enumerate(col_widths_list):
-        worksheet.column_dimensions[get_column_letter(c + 1)].width = width
+    _apply_col_widths(worksheet, [min(w + 2, 60) for w in col_widths])
 
-    # 筛选
     if rows >= 1 and cols >= 1:
         last_col = get_column_letter(cols)
         worksheet.auto_filter.ref = f"A{header_row}:{last_col}{data_start + rows - 1}"
@@ -237,6 +231,8 @@ def export_to_excel_twoheader(df, output_path, sheet_name, title,
     n_subj = df[subject_col].nunique() if subject_col else None
     text_cols = {i for i, c in enumerate(df.columns) if df[c].dtype == object}
 
+    auto_widths = [_str_width(c) for c in df.columns]
+
     output_dir = os.path.dirname(output_path)
     if output_dir:
         os.makedirs(output_dir, exist_ok=True)
@@ -290,22 +286,23 @@ def export_to_excel_twoheader(df, output_path, sheet_name, title,
             ws.merge_range(1, col, 2, col, name, hdr_fmt)
             col += 1
 
-        # 列宽
-        if col_widths:
-            for start, end, width in col_widths:
-                ws.set_column(start, end, width)
-        else:
-            col_widths_list = _col_widths(df)
-            for c, width in enumerate(col_widths_list):
-                ws.set_column(c, c, width)
-
         # 数据区
         for r in range(n_rows):
             for c in range(total_cols):
                 val = df.iloc[r, c]
                 if pd.isna(val):
                     val = ''
+                elif col_widths is None:
+                    auto_widths[c] = max(auto_widths[c], _str_width(val))
                 fmt = text_fmt if c in text_cols else data_fmt
                 ws.write(r + 3, c, val, fmt)
+
+        # 列宽
+        if col_widths:
+            for start, end, width in col_widths:
+                ws.set_column(start, end, width)
+        else:
+            for c, width in enumerate(auto_widths):
+                ws.set_column(c, c, min(width + 2, 60))
 
     print(f'{title}已保存为 \'{output_path}\'')
