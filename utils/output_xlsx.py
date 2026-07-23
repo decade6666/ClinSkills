@@ -12,21 +12,10 @@ from openpyxl.styles import Alignment, Font, PatternFill, Border, Side
 
 
 def _str_width(s):
-    """估算字符串在 Excel 中的显示宽度。CJK 字符计 2 单位，其余计 1。"""
+    """估算字符串在 Excel 中的显示宽度。非 ASCII 字符计 2 单位，ASCII 计 1。"""
     w = 0.0
     for ch in str(s):
-        code = ord(ch)
-        if (0x3400 <= code <= 0x4DBF
-                or 0x4E00 <= code <= 0x9FFF
-                or 0xF900 <= code <= 0xFAFF
-                or 0x2E80 <= code <= 0x2FDF
-                or 0x3000 <= code <= 0x303F
-                or 0xFF01 <= code <= 0xFF60
-                or 0xFE30 <= code <= 0xFE4F
-                or 0x2000 <= code <= 0x206F):
-            w += 2.0
-        else:
-            w += 1.0
+        w += 2.0 if ord(ch) > 0x7F else 1.0
     return w
 
 
