@@ -13,6 +13,7 @@
 - [ ] **直接读 raw**：禁止 `pd.read_excel(raw_path, ...)` 或 `openpyxl.load_workbook(...)` 直接读 `01 rawdata/`。必须走 `utils.loaders.load_sheet()`。
 - [ ] **解码后缀硬编码**：禁止手写 `_TXT` / `_DEC` 后缀。解码列名由 `query_metadata.py fields` 输出提供。
 - [ ] **clinflash 列名格式错误**：clinflash 项目的列名为 `{itemName}({fieldOID})` 格式（如 `临床评估(MIPERF)`），禁止只用 `itemName` 或只用 `fieldOID`。
+- [ ] **输出路径未使用标准变量**：输出必须使用 `config.py` 的 `output_table_dir` / `output_listing_dir`，禁止绕过它们直接用 `output_path` 拼接或写死绝对路径。这两个变量由 `config.py` 自动保证日期与 rawdata 一致及子目录路由。
 
 ## 重要项（违反编码规范）
 
@@ -21,11 +22,11 @@
 - [ ] **变量命名违规**：DataFrame 未用 `df_` 前缀；列名常量未用 `VAR_` / `IMPORT_` 前缀；最终表用裸名 `df`；全大写无前缀变量存 DataFrame。
 - [ ] **输出列名未还原中文**：最终输出表列名必须为中文报表表头。若内部用的是 SAS 变量名（cmis）或英文字段标签，输出前必须 rename 为中文。
 - [ ] **文件头缺少路径引导**：脚本未包含 `sys.path.insert(0, _project_root)` 引导块。
-- [ ] **导入方式错误**：未从 `config` import `output_path`；未从 `utils` import 报表/读取函数；`pd`/`np` 经过中间模块间接 import。
+- [ ] **导入方式错误**：未从 `config` import `output_table_dir` / `output_listing_dir`；未从 `utils` import 报表/读取函数；`pd`/`np` 经过中间模块间接 import。
 
 ## 建议项（可维护性）
 
-- [ ] **硬编码输出路径**：文件路径未使用 `output_path` 变量拼接，写死了绝对路径。
+- [ ] **硬编码输出路径**：文件路径未使用 `output_table_dir` / `output_listing_dir` 变量拼接，写死了绝对路径。
 - [ ] **门控字段未排除**：涉及 `hasOther` 或门控字段（如 `CMYN`/`MHYN`）的表单，未在筛选时排除"否"记录。
 - [ ] **日期格式化位置不当**：日期格式化（`strftime`）写在步骤 2-6 而非集中在步骤 7。
 - [ ] **链式 merge 未使用**：多次 merge 未用链式写法，中间产生一次性临时 DataFrame。

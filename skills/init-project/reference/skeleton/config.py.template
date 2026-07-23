@@ -2,8 +2,14 @@
 config.py — 项目路径配置
 
 从 config.yaml 加载数据路径，供各脚本直接 import。
+
+输出路径规则：
+- output 日期必须与 rawdata 日期一致（从 raw_path 提取 8 位日期，强制对应）
+- 日期目录下默认平铺输出；若已有 table/listing 子目录则沿用
 """
 
+import os
+import re
 from pathlib import Path
 import yaml
 
@@ -18,4 +24,23 @@ pd_path     = str(_PROJECT_ROOT / _cfg["path"]["pd_path"])
 code_path   = str(_PROJECT_ROOT / _cfg["path"]["code_path"])
 remark_path = str(_PROJECT_ROOT / _cfg["path"]["remark_path"])
 timewin_path = str(_PROJECT_ROOT / _cfg["path"]["timewin_path"])
-output_path = str(_PROJECT_ROOT / _cfg["path"]["output_path"])
+
+# 从 raw_path 提取 8 位日期，强制 output 日期与其一致
+_raw_date_match = re.search(r"(\d{8})", raw_path)
+if not _raw_date_match:
+    raise RuntimeError(
+        "无法从 raw_path 中提取 8 位日期（如 20260101），"
+        "请确认 config.yaml 的 raw_path 包含日期目录段"
+    )
+
+_output_root = str(_PROJECT_ROOT / _cfg["path"]["output_path"])
+output_dir = os.path.join(_output_root, _raw_date_match.group(1))
+
+# 向后兼容：日期目录下已有 table/listing 子目录则沿用，否则平铺
+_table_sub = os.path.join(output_dir, "table")
+_listing_sub = os.path.join(output_dir, "listing")
+output_table_dir = _table_sub if os.path.isdir(_table_sub) else output_dir
+output_listing_dir = _listing_sub if os.path.isdir(_listing_sub) else output_dir
+
+# 保留旧名 output_path 以保证向后兼容（指向 output_dir）
+output_path = output_dir

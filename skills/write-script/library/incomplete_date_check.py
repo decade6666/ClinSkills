@@ -15,7 +15,7 @@ if _project_root not in sys.path:
     sys.path.insert(0, _project_root)
 
 import pandas as pd
-from config import output_path
+from config import output_listing_dir
 from utils.output_format import export_to_one_excel_with_format
 from utils.loaders import load_sheet, system_cols, metadata_dir
 
@@ -209,7 +209,7 @@ title_text = f"{title}（{n}条）"
 
 export_to_one_excel_with_format(
     df_out,
-    f"{output_path}/listing/{title}.xlsx",
+    f"{output_listing_dir}/{title}.xlsx",
     title,
     title_text,
     add_title=True,

@@ -70,6 +70,7 @@ Read "${plugin_root}/skills/write-script/reference/review-checklist.md"
 - 是否有直接读取 `01 rawdata/` 的代码（`pd.read_excel` / `openpyxl`）
 - 解码后缀是否硬编码（`_TXT` / `_DEC`）
 - clinflash 项目列名格式是否为 `{itemName}({fieldOID})`
+- 输出路径是否使用了 `config.py` 的 `output_table_dir` / `output_listing_dir`，而非绕过它们直接用 `output_path` 拼接或硬编码绝对路径（这两个变量由 `config.py` 自动保证日期一致）
 
 **重要项（结合上下文判断）：**
 - `IMPORT_*` / `VAR_*` / `OUTPUT_COLS` 三区边界
@@ -77,10 +78,10 @@ Read "${plugin_root}/skills/write-script/reference/review-checklist.md"
 - 变量命名前缀（`df_` / `VAR_` / `IMPORT_`）
 - 输出列名是否还原中文
 - 文件头路径引导块（`sys.path.insert`）
-- 导入来源（`from config import output_path` / `from utils import ...`）
+- 导入来源（`from config import output_table_dir, output_listing_dir` / `from utils import ...`）
 
 **建议项（快速扫描）：**
-- 输出路径是否用 `output_path` 拼接
+- 输出路径是否用 `output_table_dir` / `output_listing_dir` 拼接
 - 门控字段（hasOther/CMYN/MHYN）是否排除"否"记录
 - 日期格式化位置（集中在步骤 7）
 - 文件命名规范（`表格NN-标题.docx`）
