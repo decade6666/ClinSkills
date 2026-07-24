@@ -10,12 +10,19 @@ JSON 输出在 Excel 同目录下，文件名由各解析模块决定。
 """
 import sys
 import os
+import json
+from datetime import datetime, timezone
+from pathlib import Path
 
 try:
     import openpyxl
 except ImportError:
     print("错误: 缺少 openpyxl，请运行: pip install openpyxl", file=sys.stderr)
     sys.exit(1)
+
+# _compat.py 权威源为 <plugin 根>/utils/_compat.py（与部署进临床项目的副本同源），
+# 本目录不再维护孪生副本——将 utils/ 加入 sys.path，供下方各解析模块 `from _compat import ...`
+sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "utils"))
 
 # 同目录下的解析模块
 from parse_taimei5 import parse as parse_taimei5
@@ -63,9 +70,6 @@ def main():
         sys.exit(1)
 
     # 写入 JSON 文件
-    import json
-    from datetime import datetime, timezone
-
     for filename, data in results.items():
         out_path = os.path.join(output_dir, f"{filename}.json")
         data["_meta"] = {

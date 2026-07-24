@@ -18,9 +18,7 @@ from utils.output_docx import (
     save_table_to_docx_threeline,
 )
 from utils.output_xlsx import (
-    export_to_excel_with_format,
     export_to_one_excel_with_format,
-    export_to_excel_twoheader,
 )
 
 __all__ = [
@@ -35,7 +33,5 @@ __all__ = [
     "merge_cells_vertical",
     "save_table_to_docx_threeline",
     # xlsx（output_xlsx.py）
-    "export_to_excel_with_format",
     "export_to_one_excel_with_format",
-    "export_to_excel_twoheader",
 ]

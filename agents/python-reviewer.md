@@ -33,11 +33,7 @@ tools:
 
 ```bash
 # 通过 PowerShell 获取插件根（plugin-enabled session 会注入此变量）。
-# 若变量为空，回退到本仓库的已知路径（本仓库自身开发时成立）：
 plugin_root="$(pwsh -NoProfile -Command '$env:CLAUDE_PLUGIN_ROOT')"
-if [ -z "$plugin_root" ]; then
-  plugin_root="/c/Users/Administrator/.claude/plugins/marketplaces/clin-skills-marketplace"
-fi
 echo "$plugin_root"
 ```
 
@@ -47,8 +43,12 @@ echo "$plugin_root"
 Read "${plugin_root}/skills/write-script/reference/review-checklist.md"
 ```
 
-**fallback 说明**：上面硬编码的路径是插件源码在本地磁盘的位置。如果你发现该路径不存在，
-用 Glob 在整个 `$HOME/.claude/plugins/` 下搜索 `review-checklist.md` 定位实际路径。
+**fallback 说明**：若 `CLAUDE_PLUGIN_ROOT` 为空或拼出的路径不存在，用 Bash 在
+`$HOME/.claude/plugins/` 下搜索定位实际路径（本 agent 无 Glob 工具）：
+
+```bash
+find "$HOME/.claude/plugins" -name review-checklist.md -path "*write-script*" 2>/dev/null
+```
 
 清单分三级：**致命项**（运行时/数据错误）、**重要项**（违反编码规范）、**建议项**（可维护性）。
 

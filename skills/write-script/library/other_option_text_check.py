@@ -4,7 +4,7 @@
 #       是否为空、或与已设预设选项重复。COMPANION_MAP 给出
 #       (formOID, fieldOID) → 配套自由文本 fieldOID 的映射，按项目填写。
 # @tags 其他,自由文本,hasOther,编码表,companion,选项核查
-# @config COMPANION_MAP
+# @config COMPANION_MAP, OTHER_TOKENS
 
 import sys, json
 from pathlib import Path
@@ -33,8 +33,9 @@ _SYS_RENAME = {_SU: _OUT_SUBJ, _RO: _OUT_ROW}
 
 CHECK_NAME = "其他选项自由文本核查"
 
-# (formOID, 选项字段 fieldOID) → 配套自由文本字段 fieldOID
-# 用 query_metadata.py fields 查 fieldOID；选「其他」时必填的文本列即配套列
+# (formOID, 选项字段标识) → 配套自由文本字段标识
+# 标识取值：clinflash 用 fieldOID，taimei/cmis 用 SAS 变量名；用 query_metadata.py fields 查询
+# 选「其他」时必填的文本列即配套列
 COMPANION_MAP = {
     ("DS_ICF",  "DSVER2"):   "DSVEROT",
     ("DM",      "ETHNIC"):   "ETHNICOT",
@@ -73,14 +74,21 @@ _meta_dir = metadata_dir()
 _ff = json.load(open(_meta_dir / "FormField.json", encoding="utf-8"))
 _cl = json.load(open(_meta_dir / "CodeList.json", encoding="utf-8"))
 
+_EDC_TYPE = _ff.get("_meta", {}).get("edcType", "")
+
 def _col_name(v):
+    """按 EDC 类型还原数据列名：clinflash→{itemName}({fieldOID})；taimei→itemName；cmis→sasFieldName。"""
     item = v.get("itemName", "")
-    oid  = v.get("fieldOID", "")
-    return f"{item}({oid})" if item and oid else item
+    if _EDC_TYPE == "clinflash":
+        oid = v.get("fieldOID", "")
+        return f"{item}({oid})" if item and oid else item
+    if _EDC_TYPE == "cmis":
+        return v.get("sasFieldName", item)
+    return item  # taimei5/6 及未知类型默认字段标签
 
 _field_info = {}
 for v in _ff["variables"]:
-    key = (v["formOID"], v["fieldOID"])
+    key = (v["formOID"], v.get("fieldOID") or v.get("sasFieldName"))
     if key not in _field_info:
         _field_info[key] = {
             "itemName":     v["itemName"],

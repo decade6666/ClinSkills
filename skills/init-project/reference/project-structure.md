@@ -52,7 +52,7 @@
 | `requirements.txt` | `skeleton/requirements.txt.template` | Python 依赖 |
 
 > 模板一律用 `.template` 后缀，避免 `.gitignore` / `config.py` 等在本目录被 git 或工具当作生效文件。
-> **工具层 `utils/`**（不走根 `.template`）：由 init-project Step 2c 从 `skeleton/utils/`（plugin 安装时由安装脚本置入）部署到项目根；源码仓库自身开发时根 `utils/` 已存在，跳过。raw 数据保护与语法检查 hook 随 ClinSkills plugin 加载（通过 `hooks/hooks.json` 声明），项目不再自带 `.claude/hooks/`。
+> **工具层 `utils/`**（不走根 `.template`）：由 init-project Step 2c 部署到项目根——plugin 安装时从 `$CLAUDE_PLUGIN_ROOT/utils/`（plugin 自带权威源）复制；裸 skill 布局回退 `skeleton/utils/`（由 legacy install.ps1 置入）。源码仓库自身开发时根 `utils/` 已存在，跳过。raw 数据保护与语法检查 hook 随 ClinSkills plugin 加载（通过 `hooks/hooks.json` 声明），项目不再自带 `.claude/hooks/`。
 
 ## 目录重命名时的路径同步清单
 
@@ -72,3 +72,5 @@
 | `.gitignore` | `rawdata/` / `output/` 规则 |
 | `skills/write-script/reference/coding-guide.md` | `04 scripts/` 引用 |
 | `skills/init-project/reference/project-structure.md` | 目录树 + sync checklist 自身 |
+
+> 上表中 `.claude/settings.json` 与 `scripts/*.py` 三行仅适用于 plugin 源仓库——临床项目不含 harness 文件（见本文「目录树」节注），项目内重命名时跳过这三行。

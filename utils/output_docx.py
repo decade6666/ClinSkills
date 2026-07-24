@@ -35,6 +35,15 @@ def set_cell_border(cell, **kwargs):
             tcBorders.append(edge_el)
     tcPr.append(tcBorders)
 
+def _apply_row_borders(cell, col_idx, num_cols, top, bottom, dashed_border, no_border):
+    """三线表单元格边框：首列左无框、末列右无框，其余侧边虚线；top/bottom 由调用方按行位给。
+
+    与原逐列分支完全等效（单列时按「首列」处理：左无框、右虚线）。
+    """
+    left = no_border if col_idx == 0 else dashed_border
+    right = no_border if (col_idx == num_cols - 1 and col_idx != 0) else dashed_border
+    set_cell_border(cell, top=top, bottom=bottom, left=left, right=right)
+
 def set_cell_background(cell, color):
     """设置单元格背景色"""
     shading_elm = OxmlElement('w:shd')
@@ -250,7 +259,7 @@ def save_table_to_docx_threeline(df: pd.DataFrame, output_path: str, title: str,
         cell = hdr_cells[i]
         cell.text = str(column_name)
         
-        # 设置背景色
+        # 设置背景色（浅灰表头底色）
         set_cell_background(cell, 'AEAAAA')
         
         # 设置对齐
@@ -266,30 +275,8 @@ def save_table_to_docx_threeline(df: pd.DataFrame, output_path: str, title: str,
         set_cell_font(cell, size=10.5, bold=True)
         
         # 设置边框：顶部0.5磅实线，底部0.5磅实线，左右虚线
-        if i == 0:  # 第一列
-            set_cell_border(
-                cell,
-                top=thick_border,
-                bottom=thick_border,
-                left=no_border,
-                right=dashed_border
-            )
-        elif i == len(df.columns) - 1:  # 最后一列
-            set_cell_border(
-                cell,
-                top=thick_border,
-                bottom=thick_border,
-                left=dashed_border,
-                right=no_border
-            )
-        else:  # 中间列
-            set_cell_border(
-                cell,
-                top=thick_border,
-                bottom=thick_border,
-                left=dashed_border,
-                right=dashed_border
-            )
+        _apply_row_borders(cell, i, len(df.columns), thick_border, thick_border,
+                           dashed_border, no_border)
     
     # 添加数据行
     for pos, (idx, row_data) in enumerate(df.iterrows()):
@@ -320,59 +307,10 @@ def save_table_to_docx_threeline(df: pd.DataFrame, output_path: str, title: str,
             # 设置字体（五号字=10.5磅）
             set_cell_font(cell, size=10.5, bold=False)
             
-            # 设置边框
-            if is_last_row:
-                # 最后一行：底部0.5磅实线，左右虚线，顶部虚线
-                if i == 0:  # 第一列
-                    set_cell_border(
-                        cell,
-                        top=dashed_border,
-                        bottom=thick_border,
-                        left=no_border,
-                        right=dashed_border
-                    )
-                elif i == len(row_data) - 1:  # 最后一列
-                    set_cell_border(
-                        cell,
-                        top=dashed_border,
-                        bottom=thick_border,
-                        left=dashed_border,
-                        right=no_border
-                    )
-                else:  # 中间列
-                    set_cell_border(
-                        cell,
-                        top=dashed_border,
-                        bottom=thick_border,
-                        left=dashed_border,
-                        right=dashed_border
-                    )
-            else:
-                # 中间行：顶部虚线，底部虚线，左右虚线
-                if i == 0:  # 第一列
-                    set_cell_border(
-                        cell,
-                        top=dashed_border,
-                        bottom=dashed_border,
-                        left=no_border,
-                        right=dashed_border
-                    )
-                elif i == len(row_data) - 1:  # 最后一列
-                    set_cell_border(
-                        cell,
-                        top=dashed_border,
-                        bottom=dashed_border,
-                        left=dashed_border,
-                        right=no_border
-                    )
-                else:  # 中间列
-                    set_cell_border(
-                        cell,
-                        top=dashed_border,
-                        bottom=dashed_border,
-                        left=dashed_border,
-                        right=dashed_border
-                    )
+            # 设置边框：末行底部0.5磅实线（三线表底线），其余虚线
+            bottom = thick_border if is_last_row else dashed_border
+            _apply_row_borders(cell, i, len(df.columns), dashed_border, bottom,
+                               dashed_border, no_border)
     
     # 执行单元格合并（新增功能）
     if merge_columns:

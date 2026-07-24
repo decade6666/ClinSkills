@@ -6,7 +6,7 @@
 #       日期支持 UK/UNK 部分日期（经 compare_dates 处理）。
 # @tags 关联行号,时间重合,overlap,CM,AE,MH,ongoing,部分日期
 # @config SRC_FORM/SRC_LINK_COL/SRC_REASON_*/SRC_STDAT/SRC_ENDAT/SRC_ONGO,
-#         TGT_FORM/TGT_NAME/TGT_STDAT/TGT_ENDAT/TGT_ONGO, OUTPUT_COLS
+#         TGT_FORM/TGT_NAME/TGT_STDAT/TGT_ENDAT/TGT_ONGO, ONGO_YES_VAL, OUTPUT_COLS
 
 import sys, re
 from pathlib import Path

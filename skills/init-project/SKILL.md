@@ -94,8 +94,10 @@ Read "$CLAUDE_PLUGIN_ROOT/skills/init-project/reference/project-structure.md"
 
 `utils/`（`loaders` 数据读取 + `output_docx`/`output_xlsx`/`output_format` 报表输出 + `date_compare` 等）是脚本**运行时 import** 的代码层，缺它 write-script 生成的脚本无法运行。
 
-- 项目根**无** `utils/` → 从 `reference/skeleton/utils/` 复制全部文件到项目 `utils/`（该目录随全局安装由安装脚本置入）。
-- 已有 `utils/`（源码仓库自身开发），或 `reference/skeleton/utils/` 不存在，则跳过。
+- 项目根**无** `utils/` → 复制工具层到项目 `utils/`，来源按布局二选一：
+  - **plugin 安装（常规）**：从 `$CLAUDE_PLUGIN_ROOT/utils/` 复制全部 `.py`（plugin 自带权威源；先将 `$CLAUDE_PLUGIN_ROOT` 解析为绝对路径——PowerShell 取 `$env:CLAUDE_PLUGIN_ROOT`）。
+  - **裸 skill 布局（legacy）**：上者不存在时，回退从 `reference/skeleton/utils/` 复制（该目录由 legacy `install.ps1` 置入 `~/.claude/skills/` 布局）。
+- 已有 `utils/`（源码仓库自身开发），或两个来源都不存在，则跳过并明确告知用户。
 
 > **项目无需自带 `.claude/`**：skills、agents、语法检查 hook、raw 数据保护均通过 ClinSkills plugin 分发（推荐 `claude plugin install clin-skills`）或在非 plugin 语境下由 legacy `install.ps1` 全局安装，跨项目生效。
 
