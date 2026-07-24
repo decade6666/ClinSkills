@@ -27,13 +27,14 @@ description: >
 git init
 ```
 
-**0b. 初始化 Python 虚拟环境并安装依赖**：
+**0b. 初始化 Python 虚拟环境并安装最小依赖**：
 
 ```bash
 python -m venv .venv && .venv\Scripts\python -m pip install --quiet openpyxl
 ```
 
 > 直接调用 `.venv\Scripts\python` 而非先激活，避免 shell 隔离导致激活失效。
+> 完整依赖（pandas 等）在 Step 2b 生成 `requirements.txt` 后、Step 2c 部署 utils 时补装。
 
 **0c. 确定项目根路径**：
 
@@ -79,9 +80,10 @@ Read "$CLAUDE_PLUGIN_ROOT/skills/init-project/reference/project-structure.md"
 | `scripts/`、`src/`、`code/` | `04 scripts/` |
 
 - 已存在标准名称（如 `01 rawdata/`）→ 跳过
-- 存在旧式名称（如 `raw/`）→ 用 `PowerShell: Rename-Item` 重命名
-- 两者都不存在 → 创建空的标准目录（留 `.gitkeep` 占位）
+- 存在旧式名称（如 `raw/`）→ 用 `PowerShell: Rename-Item` 重命名（hook 已对纯目录管理动词放行）
+- 两者都不存在 → **优先用 Write 工具**创建 `<标准目录>/.gitkeep`（Write 会隐式建父目录，且不在 raw 保护 hook 的 Bash|Read|PowerShell|Grep matcher 内，零摩擦）
 
+> **不要**用 `mkdir "01 rawdata"` / `touch "01 rawdata/.gitkeep"` 作为首选——虽已被 hook 白名单放行，但 Write 路径更稳、无 shell 分段副作用。
 > **重命名后必须同步路径引用**。按参考文件的「目录重命名时的路径同步清单」逐项更新所有受影响文件。
 
 **2b. 初始化骨架文件**
@@ -99,14 +101,30 @@ Read "$CLAUDE_PLUGIN_ROOT/skills/init-project/reference/project-structure.md"
   - **裸 skill 布局（legacy）**：上者不存在时，回退从 `reference/skeleton/utils/` 复制（该目录由 legacy `install.ps1` 置入 `~/.claude/skills/` 布局）。
 - 已有 `utils/`（源码仓库自身开发），或两个来源都不存在，则跳过并明确告知用户。
 
+**部署 utils 后补装完整依赖**（Step 2b 已生成 `requirements.txt` 时）：
+
+```bash
+.venv\Scripts\python -m pip install --quiet -r requirements.txt
+```
+
 > **项目无需自带 `.claude/`**：skills、agents、语法检查 hook、raw 数据保护均通过 ClinSkills plugin 分发（推荐 `claude plugin install clin-skills`）或在非 plugin 语境下由 legacy `install.ps1` 全局安装，跨项目生效。
 
-**2d. 报告校验结果**
+**2d. 验证并报告校验结果**
+
+报告前先做两段独立校验（**不要**用 `import utils.loaders`——它顶层依赖已填好的 `config.yaml`，骨架阶段的 `<日期>` 占位必失败）：
+
+```bash
+# 1) 第三方依赖可导入
+.venv\Scripts\python -c "import pandas, openpyxl, yaml, docx, scipy, xlsxwriter; print('deps OK')"
+# 2) utils 层仅做语法校验（不触发 config 加载）
+.venv\Scripts\python -m py_compile utils/*.py && echo "utils syntax OK"
+```
 
 向用户报告：
 - 哪些目录被创建或重命名
 - 哪些骨架文件被初始化
 - 哪些路径引用已同步更新
+- 依赖与 utils 语法校验结果
 - 无变更则报告「目录结构已符合标准」
 
 ### Step 3: 后续步骤提示

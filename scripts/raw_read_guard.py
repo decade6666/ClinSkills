@@ -15,6 +15,8 @@
 - Bash / PowerShell：按 `&&` / `||` / `;` / `|` / 换行 **分段逐条判定**，任一段命中 deny
   即拒绝整条（消解「query_metadata.py / 04 scripts/ 子串短路整条命令」的绕过）。段内：
   (0) 每个读调用都带 `nrows≤2` 的兜底读取（先剥 # 注释再计数，防 `# nrows=2` 伪造）→ 放行；
+  (0b) 目录管理动词（mkdir/Rename-Item/touch 等）且无读调用/读命令/raw 数据文件引用 → 放行
+       （消解 init-project 建标准目录被误拦；数据文件 mv 仍拒）；
   (a) 出现字面 `01 rawdata` 目录引用（裸目录或任意后缀，含 cat/head/rglob/find/cd）→ 硬拒绝；
   (b) 引号内路径 resolve 后落在 `01 rawdata/`（符号链接回指 raw）→ 硬拒绝；
   (c)【仅临床项目】有实际读调用且用了 `raw_path` 配置变量 → 硬拒绝；
@@ -67,6 +69,19 @@ _READ_CALL_RE = re.compile(r"(?:read_excel|read_csv|load_workbook|ExcelFile)\s*\
 # 字面 raw 目录引用：匹配裸目录 `01 rawdata` 或 `01 rawdata/...`（任意后缀）。
 # 比旧版「仅 .xlsx|.xls|.csv」更严——挡住 cat/head/find/cd 以及 .sas7bdat 等非表格后缀。
 _RAW_DIR_REF_RE = re.compile(r"""01\s+rawdata(?:[/\\]|['"\s]|$)""", re.IGNORECASE)
+
+# 目录管理动词：建目录/重命名/移动/占位。命中后若无读调用/读命令/数据文件引用则放行。
+_DIR_MGMT_RE = re.compile(
+    r"""(?ix)(?:^|[\s;&|(])(?:mkdir|md|new-item|rename-item|move-item|mv|touch|os\.makedirs|\.mkdir\()"""
+)
+# 读取指示命令：会吐出文件内容的动词（与 _READ_CALL_RE 互补，后者只管 pandas/openpyxl 调用）。
+_READ_VERB_RE = re.compile(
+    r"""(?ix)(?:^|[\s;&|(])(?:cat|head|tail|less|more|type|get-content|gc|import-csv|import-excel)\b"""
+)
+# raw 目录下的数据文件引用：即便在管理动词段也不放行（防移动/改名后旁路读取）。
+_RAW_DATA_FILE_RE = re.compile(
+    r"""01\s+rawdata[/\\][^'"\s]*\.(?:xlsx|xls|csv)\b""", re.IGNORECASE
+)
 
 # raw_path 配置变量：仅当与实际读调用同现、且在临床项目中时，才视为「读 raw」。
 _RAW_PATH_VAR_RE = re.compile(r"\braw_path\b")
@@ -198,12 +213,23 @@ def _segment_denies(seg: str) -> bool:
 
     判定顺序（顺序敏感）：
     1) 真 nrows≤2 兜底（剥注释后）→ 放行
-    2) 字面 01 rawdata 引用 / resolve 到 raw → deny
+    2) 目录管理白名单：mkdir/Rename-Item/touch 等，且无读调用/读命令/raw 数据文件 → 放行
+       （须在字面 deny 之前，消解 init-project 建标准目录被误拦）
+    3) 字面 01 rawdata 引用 / resolve 到 raw → deny
        （必须在 query_metadata / 04 scripts 白名单之前，避免子串洗白）
-    3) query_metadata / 04 scripts → 放行
-    4) 临床项目：读调用 + raw_path 变量 → deny
+    4) query_metadata / 04 scripts → 放行
+    5) 临床项目：读调用 + raw_path 变量 → deny
     """
     if _all_reads_bounded(seg):
+        return False
+    # 对 raw 目录的纯管理操作（建目录/重命名/移动目录/非数据占位文件）放行——
+    # 仅当无任何读调用、读命令、且不引用 raw 下数据文件时。
+    if (
+        _DIR_MGMT_RE.search(seg)
+        and not _READ_CALL_RE.search(seg)
+        and not _READ_VERB_RE.search(seg)
+        and not _RAW_DATA_FILE_RE.search(seg)
+    ):
         return False
     if _RAW_DIR_REF_RE.search(seg) or _any_token_resolves_to_raw(seg):
         return True
