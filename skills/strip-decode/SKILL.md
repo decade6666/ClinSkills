@@ -28,10 +28,10 @@ description: |
 
 ### 1. 扫描脚本
 
-列出 `04 scripts/` 下所有 `.py` 文件，逐个检查：
+列出 `04 scripts/` 下所有 `.py` 文件（含既有章节目录，递归），逐个检查：
 
 ```bash
-ls "04 scripts/"*.py
+find "04 scripts" -name "*.py"
 ```
 
 ### 2. 定位编码输出列
@@ -67,7 +67,7 @@ python "$CLAUDE_PLUGIN_ROOT/skills/write-script/scripts/query_metadata.py" field
 | 输出同时有码值列和解码列 | 冗余 | 移除码值列，保留解码列 |
 | 输出只有解码列 | 正确 | 跳过 |
 | 控件类型无解码（文本框 / CheckBox） | 无需处理 | 跳过 |
-| hasOther 配套字段 | 需合并（见 ROADMAP 3.1） | 跳过 |
+| hasOther 配套字段 | 需合并自由文本（见 write-script `reference/coding-guide.md`「编码字段与解码后缀」节） | 跳过 |
 
 不确定控件类型时，先查 `query_metadata.py fields <formOID>` 确认 `format`，不猜测。
 

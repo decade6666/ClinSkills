@@ -29,7 +29,7 @@ git diff --cached                 # 完整 diff（输出长时分批读取）
 
 **快速模式判定**：`--stat` 显示仅 1 个文件且为 `.py`、变更行数 ≤ 20 行时，自动启用快速模式：
 - 跳过维度 2-6（矛盾、过度设计、流程影响、更好策略、关键遗漏——小改动几乎不触发）
-- 仅执行：spawn `python-reviewer` Agent（`mode: diff`）→ 并入输出表格
+- 仅执行：spawn `clin-skills:python-reviewer` Agent（`mode: diff`）→ 并入输出表格
 - 输出概览中加一行：`评估模式: 快速（仅 Python 规范 + 明显错误，已跳过维度 2-6）`
 - 非 Python 文件或超过阈值 → 走完整 7 维度流程
 
@@ -46,7 +46,7 @@ git diff --cached                 # 完整 diff（输出长时分批读取）
 
 对每个变更，对照以下 7 个维度逐一判断。**某维度无问题则跳过，不在输出表格中占行。**
 
-**Agent 辅助：** 变更涉及 Python 文件时，并行 spawn `python-reviewer` Agent，prompt 中指定 `mode: diff`，对 diff 做 PEP 8 / Pythonic + 明显错误深度审查，覆盖维度 1 和维度 7。Agent 返回结果并入输出表格（其 致命/重要/建议 三级映射为本表的 严重/高/中/低，归入维度 1/7），主 skill 不再重复检查这两个维度的 Python 专项问题，聚焦维度 2-6（项目感知维度）。非 Python 文件（.md / .yaml / .json）全部维度由主 skill 人工审查。
+**Agent 辅助：** 变更涉及 Python 文件时，并行 spawn `clin-skills:python-reviewer` Agent，prompt 中指定 `mode: diff`，对 diff 做 PEP 8 / Pythonic + 明显错误深度审查，覆盖维度 1 和维度 7。Agent 返回结果并入输出表格（其 致命/重要/建议 三级映射为本表的 严重/高/中/低，归入维度 1/7），主 skill 不再重复检查这两个维度的 Python 专项问题，聚焦维度 2-6（项目感知维度）。非 Python 文件（.md / .yaml / .json）全部维度由主 skill 人工审查。
 
 | # | 维度 | 核心判据 | 审查方式 |
 |---|------|---------|---------|

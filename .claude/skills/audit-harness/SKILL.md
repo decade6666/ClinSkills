@@ -19,7 +19,7 @@ description: |
 指「Claude 怎么在这个项目里干活」这一层，**不是业务/数据分析代码**。
 
 本项目是 Claude Code Plugin 源仓库，目录分为两类：
-- **对外分发**（plugin 安装后用户可见）：`skills/`（对外 4 个 skill）、`agents/`、`hooks/hooks.json`、`scripts/`
+- **对外分发**（plugin 安装后用户可见）：`skills/`（对外 5 个 skill）、`agents/`、`hooks/hooks.json`、`scripts/`
 - **内部开发**（仅本仓库生效）：`.claude/skills/`（dev-only）、`.claude/settings.json`、`CLAUDE.md`
 
 | 类别 | 路径 |
@@ -46,7 +46,7 @@ description: |
 - 不再有 `.claude/rules/` 目录——约束已内化到 CLAUDE.md 末尾 Constraints 节
 - 不再有 `.claude/agents/`、`.claude/hooks/` 目录——已迁移到根级 `agents/`、`hooks/`、`scripts/`
 - `install/` 目录无 git 追踪文件（`install/merge_hook.py` 已删除）
-- `_compat.py` 有两份：`utils/_compat.py`（权威源）与 `skills/build-metadata/scripts/_compat.py`（由 installer 刷新，供 skill 脚本 import）
+- `_compat.py` 单一权威源 `utils/_compat.py`——build-metadata 解析器经 build-metadata.py 顶部 sys.path 引导直接 import，不再维护孪生副本
 
 ## 工作流程
 

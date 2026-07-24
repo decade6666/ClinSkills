@@ -83,7 +83,7 @@ def parse(wb):
             "formName": row.get("表单名称"),
             "sasFieldName": row.get("变量名称"),
             "itemName": row.get("变量标签"),
-            "fieldFormat": row.get("控件类型"),
+            "fieldFormat": str(row.get("控件类型") or "").strip(),
         }
 
         # codeList 引用：名称 + 条目数 + hasOther

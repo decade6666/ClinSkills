@@ -124,11 +124,9 @@ python -c "import ast; ast.parse(open(r'<脚本路径>', encoding='utf-8').read(
 
 仅验证语法正确性，提醒用户数据层未验证。
 
-脚本实跑命令、退出码检查、输出文件检查见 `CLAUDE.md` Constraints 节第 3 条及 skill Step 5 正常路径。
-
 **规范审查（语法检查通过后）：**
 
-语法检查通过后，spawn `python-reviewer` Agent 对脚本做编码规范合规性审查。prompt 中指定：
+语法检查通过后，spawn `clin-skills:python-reviewer` Agent 对脚本做编码规范合规性审查。prompt 中指定：
 
 ```
 mode: full
